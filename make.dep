@@ -1,4 +1,5 @@
-main.o: main.cpp include/GetPot include/Domain.hpp include/Core.hpp \
+MeshRegion.o: src/MeshRegion.cpp /usr/include/stdc-predef.h \
+ include/MeshRegion.hpp include/Core.hpp \
  /home/galati_j/getfem-5.4/src/getfem/getfem_regular_meshes.h \
  /home/galati_j/getfem-5.4/src/getfem/getfem_mesh.h \
  /home/galati_j/getfem-5.4/src/getfem/bgeot_ftool.h \
@@ -12,6 +13,7 @@ main.o: main.cpp include/GetPot include/Domain.hpp include/Core.hpp \
  /home/galati_j/getfem-5.4/src/gmm/gmm_feedback_management.h \
  /home/galati_j/getfem-5.4/src/getfem/bgeot_config.h \
  /home/galati_j/getfem-5.4/src/getfem/getfem_arch_config.h \
+ /usr/include/fenv.h /usr/include/x86_64-linux-gnu/bits/fenv.h \
  /home/galati_j/getfem-5.4/src/getfem/dal_config.h \
  /home/galati_j/getfem-5.4/src/gmm/gmm_except.h \
  /home/galati_j/getfem-5.4/src/gmm/gmm_algobase.h \
@@ -118,10 +120,62 @@ main.o: main.cpp include/GetPot include/Domain.hpp include/Core.hpp \
  /home/galati_j/getfem-5.4/src/gmm/gmm_domain_decomp.h \
  /home/galati_j/getfem-5.4/src/gmm/gmm_inoutput.h \
  /home/galati_j/getfem-5.4/src/gmm/gmm_MUMPS_interface.h \
+ /usr/include/smumps_c.h /usr/include/mumps_compat.h \
+ /usr/include/mumps_c_types.h /usr/include/mumps_int_def.h \
+ /usr/include/dmumps_c.h /usr/include/cmumps_c.h /usr/include/zmumps_c.h \
  /home/galati_j/getfem-5.4/src/gmm/gmm_superlu_interface.h \
  /home/galati_j/getfem-5.4/src/getfem/bgeot_mesh.h \
  /home/galati_j/getfem-5.4/src/getfem/getfem_mesh_fem_product.h \
  /home/galati_j/getfem-5.4/src/getfem/getfem_mesh_fem_global_function.h \
  /home/galati_j/getfem-5.4/src/getfem/getfem_fem_global_function.h \
  /home/galati_j/getfem-5.4/src/getfem/getfem_global_function.h \
- include/GetPot include/DomainView.hpp
+ include/GetPot /usr/include/boost/shared_ptr.hpp \
+ /usr/include/boost/smart_ptr/shared_ptr.hpp \
+ /usr/include/boost/smart_ptr/detail/shared_count.hpp \
+ /usr/include/boost/smart_ptr/bad_weak_ptr.hpp \
+ /usr/include/boost/config.hpp /usr/include/boost/config/user.hpp \
+ /usr/include/boost/config/detail/select_compiler_config.hpp \
+ /usr/include/boost/config/compiler/gcc.hpp \
+ /usr/include/boost/config/detail/select_stdlib_config.hpp \
+ /usr/include/boost/config/stdlib/libstdcpp3.hpp /usr/include/unistd.h \
+ /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
+ /usr/include/x86_64-linux-gnu/bits/environments.h \
+ /usr/include/x86_64-linux-gnu/bits/confname.h \
+ /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
+ /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
+ /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
+ /usr/include/linux/close_range.h \
+ /usr/include/boost/config/detail/select_platform_config.hpp \
+ /usr/include/boost/config/platform/linux.hpp \
+ /usr/include/boost/config/detail/posix_features.hpp \
+ /usr/include/boost/config/detail/suffix.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_has_gcc_intrinsics.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_has_sync_intrinsics.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_atomic.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_typeinfo_.hpp \
+ /usr/include/boost/cstdint.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_noexcept.hpp \
+ /usr/include/boost/checked_delete.hpp \
+ /usr/include/boost/core/checked_delete.hpp \
+ /usr/include/boost/core/addressof.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_disable_deprecated.hpp \
+ /usr/include/boost/throw_exception.hpp \
+ /usr/include/boost/assert/source_location.hpp \
+ /usr/include/boost/current_function.hpp \
+ /usr/include/boost/config/workaround.hpp \
+ /usr/include/boost/exception/exception.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_convertible.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_nullptr_t.hpp \
+ /usr/include/boost/assert.hpp \
+ /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp \
+ /usr/include/boost/smart_ptr/detail/spinlock.hpp \
+ /usr/include/boost/smart_ptr/detail/spinlock_gcc_atomic.hpp \
+ /usr/include/boost/smart_ptr/detail/yield_k.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_thread_pause.hpp \
+ /usr/include/boost/smart_ptr/detail/sp_thread_sleep.hpp \
+ /usr/include/boost/config/pragma_message.hpp \
+ /usr/include/boost/smart_ptr/detail/operator_bool.hpp \
+ /usr/include/boost/smart_ptr/detail/local_sp_deleter.hpp \
+ /usr/include/boost/smart_ptr/detail/local_counted_base.hpp
