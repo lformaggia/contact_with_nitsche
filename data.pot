@@ -1,0 +1,52 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                 PARAMETERS                              %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+[time]
+    Tend = 0.5
+    dt = 5e-2
+    [../]
+[it]
+    ContactToll = 1.0e-5    % tolerance for contact
+    ContactMaxIt = 500      % maxit for contact
+    gamma = 10              % Nitsche's coefficient
+    theta = 0   % +1 -1     % symmetrix - skew-symmetric
+    %% other solver parameters
+    [../]
+[physics]
+    E = 25000               % lamè coefficients
+    nu = 0.3
+    bulkLoad = [0,0,0]                  % body force (in assembly)
+
+    regionDisp = 1 4 5
+    bdDisp1 = [-0.02*x,0.01*x,0.]       % boundary displacement (Dirichlet BCs)
+    bdDisp2 = [0,0,0]                   % RMK: use no blank spaces before/after comma
+    bdDisp3 = [tan(z*y),0.,x+y]
+
+    regionLoad = 7 3 10
+    bdLoad1 = [0,0,0]                    % boundary tractions (Neumann BCs)
+    bdLoad2 = [0,0,0]                    % boundary tractions (Neumann BCs)
+    bdLoad3 = [0,0,0]                    % boundary tractions (Neumann BCs)
+
+    [../]
+[domain]
+    meshFile =            % to import the mesh
+    meshFolder = ./meshes/
+    meshType = GT_PK(3,1)           % linear element on teth 
+    Nx = 8                          % number of subdivisions in each direction
+    Ny = 16
+    Nz = 16
+    Lx = 4                  % domain length in each direction
+    Ly = 8
+    Lz = 8
+    [../]
+[numerics]
+    FEMTypeDisplacement = FEM_PK(3,1)   % P1 FEM for displacement
+    FEMTypeCoeff = FEM_PK(3,0)          % P0 FEM for coefficients
+    FEMTypeStress = FEM_PK(3,1)         % P1 FEM for stress reconstruction
+    integrationMethod = IM_TRIANGLE(6)  % integration method
+    u_ini = [0,0,0]                     % initial solution
+    [../]
+
+
+
