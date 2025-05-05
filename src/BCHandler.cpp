@@ -3,13 +3,13 @@
 
 namespace gf {
 
-    BCHandler(const getfem::mesh& mesh, const Domain& domain)
+    BCHandler::BCHandler(const getfem::mesh& mesh, const Domain& domain)
     : M_mesh(mesh) {
 
         // Get the domain dimensions
-        scalar_type Lx = Domain.Lx();
-        scalar_type Ly = Domain.Ly(); 
-        scalar_type Lz = Domain.Lz();
+        scalar_type Lx = Domain.Lx;
+        scalar_type Ly = Domain.Ly; 
+        scalar_type Lz = Domain.Lz;
 
         // Construct the map regionID -> meshRegion
         getfem::outer_faces_of_mesh(mesh, M_border_faces);
@@ -130,14 +130,14 @@ namespace gf {
                 result.push_back(func(node, t));
             }
             return result;
-        }
+        };
 
         return parsedVectorFunction;
     }
 
 
     template <BCType T>
-    void BCHandler::read(const Getpot& datafile){
+    void BCHandler::read(const GetPot& datafile){
 
         std::vector<size_type> regionsID;
 
@@ -191,21 +191,21 @@ namespace gf {
 
             if constexpr (T == BCType::Dirichlet) { // build BCDir and add to M_BCList
                 // Build the BCDir object bc
-                auto bc = std::make_unique<BCDir>(M_IdToRegion[i], regionsID[i], std::move(func));
+                auto bc = std::make_unique<BCDir>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func));
                 // Add to map
-                M_BClist[BCType::Dirichlet].emplace_back(std::move(bc));
+                M_BCList[BCType::Dirichlet].emplace_back(std::move(bc));
             }
             else if constexpr (T == BCType::Neumann) {
                 // Build the BCNeu object bc
-                auto bc = std::make_unique<BCNeu>(M_IdToRegion[i], regionsID[i], std::move(func));
+                auto bc = std::make_unique<BCNeu>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func));
                 // Add to map
-                M_BClist[BCType::Neumann].emplace_back(std::move(bc));
+                M_BCList[BCType::Neumann].emplace_back(std::move(bc));
             }
             else if constexpr (T == BCType::Mixed) { /** !\todo */
                 // Build the BCMixed object bc
-                auto bc = std::make_unique<BCMix>(M_IdToRegion[i], regionsID[i], std::move(func) /** !\todo */);
+                auto bc = std::make_unique<BCMix>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func) /** !\todo */);
                 // Add to map
-                M_BClist[BCType::Mixed].emplace_back(std::move(bc));
+                M_BCList[BCType::Mixed].emplace_back(std::move(bc));
             }
 
         }

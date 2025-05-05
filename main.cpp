@@ -1,5 +1,5 @@
 #include "GetPot"
-#include "Domain.hpp"
+#include "ContactProblem.hpp"
 
 int main(int argc, char * argv[]){
     using namespace gf;

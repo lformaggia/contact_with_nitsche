@@ -4,6 +4,7 @@
 #include "Core.hpp"
 #include "GetPot"
 #include "BC.hpp"
+#include "muParserXInterface.hpp"
 
 #include <unordered_map>
 
@@ -11,7 +12,7 @@ namespace gf {
 
     class BCHandler {
 
-        using BCListType = std::unordered_map<BCType, std::vector<unique_ptr<BC>>>;
+        using BCListType = std::unordered_map<BCType, std::vector<std::unique_ptr<BC>>>;
 
         const getfem::mesh& M_mesh; ///< The mesh object
         getfem::mesh_region M_border_faces; ///< Region containing all the border faces of the mesh
@@ -38,7 +39,7 @@ namespace gf {
         std::vector<size_type> getNeumannRegions() const;
         std::vector<size_type> getMixedRegions() const;
     */
-    }
+    };
 
 } // namespace gf
 

@@ -22,7 +22,7 @@ namespace gf{
         /**
          * @brief Return the BC type
          */
-        virtual BCType type() const = 0;
+        virtual std::string type() const = 0;
 
         virtual ~BC() = default;
 
@@ -32,10 +32,10 @@ namespace gf{
          * @param t The time instant
          */
         base_small_vector eval(const base_node& x, scalar_type t) const {
-            return M_function(x,t)
-        };
+            return M_function(x,t);
+        }
         
-    }
+    };
 
 
 
@@ -56,7 +56,7 @@ namespace gf{
 
         std::string type() const override { return "Neumann"; }
 
-        std::string isNormal() const { return isNormal; }
+        bool isNormal() const { return isNormal; }
 
     };
 

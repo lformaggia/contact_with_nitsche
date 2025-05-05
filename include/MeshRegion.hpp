@@ -56,14 +56,14 @@ namespace gf{
          * It delegates to the base constructor
          */
         Bulk(const getfem::mesh& mesh, const dal::bit_vector& convexesList, SideType s)
-        : DomainView(mesh, convexesList), M_side(s){}
+        : MeshRegion(mesh, convexesList), M_side(s){}
 
         /**
          * @brief Construct the Bulk importing from gmsh file
          * !\todo
          */
         Bulk(const getfem::mesh& mesh, const getfem::mesh_region& region, SideType s)
-        : DomainView(mesh,region), M_side(s){}
+        : MeshRegion(mesh,region), M_side(s){}
 
         /**
          * @brief Return the name of the region
@@ -84,7 +84,7 @@ namespace gf{
     };
 
 
-    class Fault : public DomainView {
+    class Fault : public MeshRegion {
     public:
         using faceToConvexesMap = std::map<size_type, std::pair<size_type,size_type>>;
         /**
@@ -98,7 +98,7 @@ namespace gf{
          * !\todo: build the faceToConvexes map
          */
         Fault(const getfem::mesh& mesh, const getfem::mesh_region& region)
-        : DomainView(mesh,region) {}
+        : MeshRegion(mesh,region) {}
 
         std::string name() const override { return "Fault"; }
 

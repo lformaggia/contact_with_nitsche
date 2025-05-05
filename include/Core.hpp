@@ -17,6 +17,7 @@
 #include <getfem/bgeot_mesh.h>
 
 #include <string>
+#include <memory>
 
 #include <getfem/getfem_mesh_fem_product.h>
 #include <getfem/getfem_mesh_fem_global_function.h>
@@ -29,14 +30,15 @@
 
 
 /* some Getfem++ types that we will be using */
-namespace gf{
+namespace gf {
+    
     using bgeot::scalar_type; ///< = double
     using bgeot::base_small_vector; ///< special class for small (dim < 16) vectors
     using bgeot::base_node; ///< geometrical nodes (derived from base_small_vector)
     using bgeot::size_type; ///< basically std::vector<scalar_type>::size_type
 
-    using ScalarFunctionType = std::function<scalar_type(base_node,scalar_type)> ///< f(\vector{x},t)
-    using VectorFunctionType = std::function<base_small_vector(base_node, scalar_type)> ///< \vector{f}(\vector{x},t)
+    using ScalarFunctionType = std::function<scalar_type(base_node,scalar_type)>; ///< f(\vector{x},t)
+    using VectorFunctionType = std::function<base_small_vector(base_node, scalar_type)>; ///< \vector{f}(\vector{x},t)
 
     enum SideType{
         LEFT,
@@ -47,7 +49,12 @@ namespace gf{
         Dirichlet,
         Neumann,
         Mixed
-    }
+    };
+
+
+}
+
+#endif // _CORE_HPP_
 
 
     /* definition of some matrix/vector types. These ones are built
@@ -90,6 +97,3 @@ namespace gf{
     // {
     //     MEDIUM = 3, FRACTURE = MEDIUM-2
     // };
-
-}
-#endif // _CORE_HPP_

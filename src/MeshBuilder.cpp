@@ -1,4 +1,5 @@
 #include "MeshBuilder.hpp"
+#include "MeshRegion.cpp"
 
 namespace gf {
 
@@ -12,7 +13,7 @@ namespace gf {
         size_type Ny = M_datafile("domain/Ny", 16);
         size_type Nz = M_datafile("domain/Nz", 16);
         std::string meshType = M_datafile("domain/meshType",
-            (N < 3) ? "GT_PK(3,1)" : "GT_PK(3,1)"); // element type for meshing, linear by defaults
+            (N < 3) ? "GT_PK(2,1)" : "GT_PK(3,1)"); // element type for meshing, linear by defaults
 
 
         auto pgt = bgeot::geometric_trans_descriptor(meshType);
@@ -75,9 +76,9 @@ namespace gf {
                     insertedCentered = true;
             }
         }
-        regions["BulkLeft"] = std::make_unique<BulkView>(mesh, leftConvexesList, SideType::LEFT);
-        regions["BulkRight"] = std::make_unique<BulkView>(mesh, rightConvexesList, SideType::RIGHT);
-        regions["Fault"] = std::make_unique<FaultView>(mesh,centeredConvexesList);
+        regions["BulkLeft"] = std::make_unique<Bulk>(mesh, leftConvexesList, SideType::LEFT);
+        regions["BulkRight"] = std::make_unique<Bulk>(mesh, rightConvexesList, SideType::RIGHT);
+        regions["Fault"] = std::make_unique<Fault>(mesh,centeredConvexesList);
     }
 
 
@@ -91,7 +92,7 @@ namespace gf {
 
     void GmshBuilder::initRegions(const getfem::mesh& mesh, RegionMapType &regions) const {
         std::map<std::string, size_type> regionMap;
-        getfem::import_mesh_gmsh(M_meshFile, mesh, regionMap);
+        // getfem::import_mesh_gmsh(M_meshFile, mesh, regionMap);
 
         /* ... */
     
@@ -100,17 +101,17 @@ namespace gf {
         auto itFault = regionMap.find("Fault");
     
         if (itLeft != regionMap.end()) {
-            auto view = std::make_unique<BulkView>(mesh, itLeft->second, SideType::LEFT);
+            auto view = std::make_unique<Bulk>(mesh, itLeft->second, SideType::LEFT);
             regions["BulkLeft"] = std::move(view);
         }
     
         if (itRight != regionMap.end()) {
-            auto view = std::make_unique<BulkView>(mesh, itRight->second, SideType::RIGHT);
+            auto view = std::make_unique<Bulk>(mesh, itRight->second, SideType::RIGHT);
             regions["BulkRight"] = std::move(view);
         }
     
         if (itFault != regionMap.end()) {
-            auto view = std::make_unique<FaultView>(mesh, itFault->second);
+            auto view = std::make_unique<Fault>(mesh, itFault->second);
             regions["Fault"] = std::move(view);
         }
     }

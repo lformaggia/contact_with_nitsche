@@ -4,7 +4,7 @@
 #include "Core.hpp"
 #include "MeshBuilder.hpp"
 #include "MeshRegion.hpp"
-#include "BC.hpp"
+#include "BCHandler.hpp"
 #include "GetPot"
 
 namespace gf{
@@ -50,18 +50,19 @@ namespace gf{
     private:
 
         GetPot M_datafile;
+        Param M_params;
         std::unique_ptr<MeshBuilderStrategy> M_meshBuilder; ///< MeshBuilder
         getfem::mesh M_mesh; ///< The mesh
         RegionMapType M_regions; ///< The mesh regions (BulkLeft, BulkRight, Fault)
         BCHandler M_BC; ///< Class that stores BC information
-        FEManager M_FEM; ///< Stores the getfem::mesh_fem objects
-        TimeManager M_time; ///< Struct that keeps information for evolutionary problems
-        SolType M_U; ///< Vector to store the solution 
-        StressType M_stress; ///< Vector that stores the stress information
+        // FEManager M_FEM; ///< Stores the getfem::mesh_fem objects
+        // TimeManager M_time; ///< Struct that keeps information for evolutionary problems
+        // SolType M_U; ///< Vector to store the solution 
+        // StressType M_stress; ///< Vector that stores the stress information
 
         /*...*/
 
-    }
+    };
 
 }
 
