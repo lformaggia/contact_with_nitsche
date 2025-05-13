@@ -1,5 +1,5 @@
-#ifndef _DOMAIN_VIEW_HPP_
-#define _DOMAIN_VIEW_HPP_
+#ifndef _MESH_REGION_HPP_
+#define _MESH_REGION_HPP_
 
 #include "Core.hpp"
 #include <map>
@@ -44,6 +44,8 @@ namespace gf{
 
         const getfem::mesh_region& region() const { return M_region; }
         // const const getfem::mesh& mesh() const; // via M_domain
+
+        const dal::bit_vector& index() const { return M_region.index(); }
     };
 
 
@@ -120,4 +122,4 @@ namespace gf{
 
 }
 
-#endif // _DOMAIN_VIEW_HPP_
+#endif // _MESH_REGION_HPP_

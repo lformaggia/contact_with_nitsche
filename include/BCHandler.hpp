@@ -2,6 +2,7 @@
 #define _BC_HANDLER_HPP_
 
 #include "Core.hpp"
+#include "Params.hpp"
 #include "GetPot"
 #include "BC.hpp"
 #include "muParserXInterface.hpp"
@@ -24,12 +25,13 @@ namespace gf {
         VectorFunctionType buildBCFunctionFromExpressions(const std::vector<std::string>&);
 
         template <BCType T>
-        void read(const GetPot&);
+        void read(GetPot&);
 
     public:
+        BCHandler() = default;
         BCHandler(const getfem::mesh& mesh, const Domain& domain);
 
-        void readBC(const GetPot &);
+        void readBC(GetPot &);
 
     /*
         std::vector<base_node> getDirichletNodes() const;

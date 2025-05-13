@@ -17,10 +17,14 @@
 #include <getfem/bgeot_mesh.h>
 
 #include <string>
+#include <sstream>
+#include <vector>
+#include <map>
 #include <memory>
 
 #include <getfem/getfem_mesh_fem_product.h>
 #include <getfem/getfem_mesh_fem_global_function.h>
+#include <getfem/getfem_models.h>
 
 #include "GetPot"
 #include <iostream>
@@ -29,9 +33,10 @@
 #include <functional>
 
 
-/* some Getfem++ types that we will be using */
+
 namespace gf {
     
+    /* some Getfem++ types that we will be using */
     using bgeot::scalar_type; ///< = double
     using bgeot::base_small_vector; ///< special class for small (dim < 16) vectors
     using bgeot::base_node; ///< geometrical nodes (derived from base_small_vector)
@@ -39,6 +44,12 @@ namespace gf {
 
     using ScalarFunctionType = std::function<scalar_type(base_node,scalar_type)>; ///< f(\vector{x},t)
     using VectorFunctionType = std::function<base_small_vector(base_node, scalar_type)>; ///< \vector{f}(\vector{x},t)
+    
+    /* definition of some matrix/vector types. These ones are built
+    using the predefined types in Gmm++ */
+    using sparse_vector = getfem::modeling_standard_sparse_vector;
+    using sparse_matrix = getfem::modeling_standard_sparse_matrix;
+    using plain_vector = getfem::modeling_standard_plain_vector;
 
     enum SideType{
         LEFT,
@@ -51,8 +62,11 @@ namespace gf {
         Mixed
     };
 
+    class MeshRegion;
+    using RegionMapType = std::map<std::string, std::unique_ptr<MeshRegion>>;
 
-}
+
+} // namespace gf
 
 #endif // _CORE_HPP_
 

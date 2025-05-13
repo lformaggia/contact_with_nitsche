@@ -1,4 +1,5 @@
 # From command line: export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+MU_PARSERX_PATH = ./external/muparserx/build
 
 # Compiler
 CXX = g++
@@ -6,7 +7,7 @@ CXX = g++
 # Optimize flags
 OPTFLAGS = -O3
 GETFEM_PATH = $(HOME)/getfem-5.4
-INCLUDE = -I$(GETFEM_PATH)/include -I$(GETFEM_PATH)/src -I$(GETFEM_PATH)/src/gmm -I./include -I/usr/include -I/usr/include/x86_64-linux-gnu
+INCLUDE = -I$(GETFEM_PATH)/include -I$(GETFEM_PATH)/src -I$(GETFEM_PATH)/src/gmm -I./include -I/usr/include -I/usr/include/x86_64-linux-gnu -I./external/muparserx/parser
 CXXFLAGS = $(INCLUDE) $(OPTFLAGS) 
 
 # Executable source
@@ -23,13 +24,14 @@ FOLDER = src/
 
 
 # Laptop
-LIB_PATH = /usr/lib /usr/lib/x86_64-linux-gnu
+LIB_PATH = /usr/lib /usr/lib/x86_64-linux-gnu $(MU_PARSERX_PATH)
 
 
 # Laptop
 LDLIBS = /usr/local/lib/libgetfem.a
 ####### ADDED
 LDLIBS += -Wl,-rpath,/usr/lib/x86_64-linux-gnu
+LDLIBS += -L$(MU_PARSERX_PATH) -lmuparserx
 ######## END ADDED
 
 # Laptop

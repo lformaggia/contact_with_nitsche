@@ -2,9 +2,11 @@
 #define _CONTACT_PROBLEM_HPP_
 
 #include "Core.hpp"
+#include "Params.hpp"
 #include "MeshBuilder.hpp"
 #include "MeshRegion.hpp"
 #include "BCHandler.hpp"
+#include "FEMManager.hpp"
 #include "GetPot"
 
 namespace gf{
@@ -17,12 +19,12 @@ namespace gf{
      */
     class ContactProblem {
     public:
-        using RegionMapType = std::map<std::string, std::unique_ptr<MeshRegion>>;
+    
         /**
          * @brief Constructor taking the data filename
          * Initializes the stored GetPot object, which is needed by most of the methods
          */
-        ContactProblem (const std::string& filename);
+        ContactProblem (const std::string& filename, const std::string& meshfile, bool verbose);
         
         /**
          * @brief Initialize the problem
@@ -47,15 +49,16 @@ namespace gf{
          * @brief Export vtk results for visualization
          */
         void exportResults() const;
+        
     private:
 
         GetPot M_datafile;
-        Param M_params;
+        Params M_params;
         std::unique_ptr<MeshBuilderStrategy> M_meshBuilder; ///< MeshBuilder
         getfem::mesh M_mesh; ///< The mesh
         RegionMapType M_regions; ///< The mesh regions (BulkLeft, BulkRight, Fault)
-        BCHandler M_BC; ///< Class that stores BC information
-        // FEManager M_FEM; ///< Stores the getfem::mesh_fem objects
+        std::unique_ptr<BCHandler> M_BC; ///< Class that stores BC information
+        FEMManager M_FEM; ///< Stores the getfem::mesh_fem objects
         // TimeManager M_time; ///< Struct that keeps information for evolutionary problems
         // SolType M_U; ///< Vector to store the solution 
         // StressType M_stress; ///< Vector that stores the stress information

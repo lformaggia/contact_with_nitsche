@@ -1,4 +1,5 @@
 #include "BCHandler.hpp"
+#include "Utils.hpp"
 #include <sstream>
 
 namespace gf {
@@ -7,9 +8,9 @@ namespace gf {
     : M_mesh(mesh) {
 
         // Get the domain dimensions
-        scalar_type Lx = Domain.Lx;
-        scalar_type Ly = Domain.Ly; 
-        scalar_type Lz = Domain.Lz;
+        scalar_type Lx = domain.Lx;
+        scalar_type Ly = domain.Ly; 
+        scalar_type Lz = domain.Lz;
 
         // Construct the map regionID -> meshRegion
         getfem::outer_faces_of_mesh(mesh, M_border_faces);
@@ -93,7 +94,7 @@ namespace gf {
         // }
     }
 
-    void BCHandler::readBC(const GetPot& datafile) {
+    void BCHandler::readBC(GetPot& datafile) {
         getfem::outer_faces_of_mesh(M_mesh, M_border_faces);
         read<BCType::Dirichlet>(datafile);
         read<BCType::Neumann>(datafile);
@@ -107,10 +108,11 @@ namespace gf {
         
         // Build a function for each component and return the combined VectorFunctionType
         VectorFunctionType parsedVectorFunction;
+        std::vector<ScalarFunctionType> parsedFunctionsVec;
 
-        for (const auto& expr: components) {
+        for (size_type k {}; k < 3; ++k) {
             // Reset the expression of the parser for the new component
-            parser.set_expression(expr);
+            M_parser.set_expression(components[k]);
 
             // Define a lambda function that binds to the parsed expression
             auto func = [this](base_node x, scalar_type t) -> scalar_type {
@@ -120,14 +122,14 @@ namespace gf {
                 return result;  // return result as scalar_type
             };
 
-            parsedVectorFunction.push_back(func);
+            parsedFunctionsVec[k] = std::move(func);
         }
 
         // Combine and return the result
-        return [parsedVectorFunction](base_node node, scalar_type t) -> base_small_vector {
-            base_small_vector result;
-            for (auto& func : parsedVectorFunction) {
-                result.push_back(func(node, t));
+        return [parsedFunctionsVec](base_node node, scalar_type t) -> base_small_vector {
+            base_small_vector result(3);
+            for (size_type i {}; i < 3 ; ++i) {
+                result[i] = parsedFunctionsVec[i](node, t);
             }
             return result;
         };
@@ -137,76 +139,66 @@ namespace gf {
 
 
     template <BCType T>
-    void BCHandler::read(const GetPot& datafile){
+    void BCHandler::read(GetPot& datafile){
 
         std::vector<size_type> regionsID;
-
+        std::string regionsStr;
         if constexpr (T == BCType::Dirichlet) { // read the regionDisp list
-            if (datafile.have_variable("physics.regionDisp"))
-                regionsID = datafile("physics.regionDisp", std::vector<size_type>());
+            regionsStr = datafile("physics.regionDisp", "");
         }
         else if constexpr (T == BCType::Neumann) {
-            if (datafile.have_variable("physics.regionLoad"))
-                regionsID = datafile("physics.regionLoad", std::vector<size_type>());
+            regionsStr = datafile("physics.regionLoad", "");
         }
         else if constexpr (T == BCType::Mixed) {
-            if (datafile.have_variable("physics.regionMix"))
-                regionsID = datafile("physics.regionMix", std::vector<size_type>());
+            regionsStr = datafile("physics.regionMix", "");
         }
+
+        std::istringstream istr(regionsStr);
+        size_type val;
+        while (istr >> val) regionsID.emplace_back(val);
 
         for (size_t i = 0; i < regionsID.size(); ++i) {
             std::ostringstream varname;
 
             if constexpr (T == BCType::Dirichlet) { // read the bdDisp list
                 varname << "physics.bdDisp" << (i + 1);  // bdDisp1, bdDisp2, ...
-                if (!datafile.have_variable(varname.str()))
+                if (!datafile.search(varname.str().c_str()))
                     throw std::logic_error("Missing Dirichlet expression");
             }
             else if constexpr (T == BCType::Neumann) {
                 varname << "physics.bdLoad" << (i + 1);  // bdLoad1, bdLoad2, ...
-                if (!datafile.have_variable(varname.str()))
+                if (!datafile.search(varname.str().c_str()))
                     throw std::logic_error("Missing Neumann expression");
             }
             else if constexpr (T == BCType::Mixed) {
                  /** !\todo */
             }
 
-            std::string stringValue = datafile(varname.str(), std::string(""));
+            std::string stringValue = datafile(varname.str().c_str(), "");
 
-            // Remove brackets
-            stringValue.erase(std::remove(stringValue.begin(), stringValue.end(), '['), stringValue.end());
-            stringValue.erase(std::remove(stringValue.begin(), stringValue.end(), ']'), stringValue.end());
-
-            // Split by commas
-            std::vector<std::string> components;
-            std::istringstream ss(stringValue);
-            std::string item;
-
-            while (std::getline(ss, item, ',')) {
-                components.push_back(item);
-            }
+            std::vector<std::string> components = splitString(stringValue);
 
             // Parse using muParserInterface
             VectorFunctionType func = buildBCFunctionFromExpressions(components);
 
             if constexpr (T == BCType::Dirichlet) { // build BCDir and add to M_BCList
                 // Build the BCDir object bc
-                auto bc = std::make_unique<BCDir>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func));
+                auto bc = std::make_unique<BCDir>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func), BCType::Dirichlet);
                 // Add to map
                 M_BCList[BCType::Dirichlet].emplace_back(std::move(bc));
             }
             else if constexpr (T == BCType::Neumann) {
                 // Build the BCNeu object bc
-                auto bc = std::make_unique<BCNeu>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func));
+                auto bc = std::make_unique<BCNeu>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func), BCType::Neumann);
                 // Add to map
                 M_BCList[BCType::Neumann].emplace_back(std::move(bc));
             }
-            else if constexpr (T == BCType::Mixed) { /** !\todo */
-                // Build the BCMixed object bc
-                auto bc = std::make_unique<BCMix>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func) /** !\todo */);
-                // Add to map
-                M_BCList[BCType::Mixed].emplace_back(std::move(bc));
-            }
+            // else if constexpr (T == BCType::Mixed) { /** !\todo */
+            //     // Build the BCMixed object bc
+            //     auto bc = std::make_unique<BCMix>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func) /** !\todo */);
+            //     // Add to map
+            //     M_BCList[BCType::Mixed].emplace_back(std::move(bc));
+            // }
 
         }
 

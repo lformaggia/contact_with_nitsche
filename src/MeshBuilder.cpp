@@ -1,5 +1,5 @@
 #include "MeshBuilder.hpp"
-#include "MeshRegion.cpp"
+#include "MeshRegion.hpp"
 
 namespace gf {
 
@@ -12,23 +12,22 @@ namespace gf {
         size_type Nx = M_datafile("domain/Nx", 4); // number of subdivisions
         size_type Ny = M_datafile("domain/Ny", 16);
         size_type Nz = M_datafile("domain/Nz", 16);
-        std::string meshType = M_datafile("domain/meshType",
-            (N < 3) ? "GT_PK(2,1)" : "GT_PK(3,1)"); // element type for meshing, linear by defaults
-
+        std::string meshType = M_datafile("domain/meshType", "GT_PK(3,1)"); // element type for meshing, linear by defaults
 
         auto pgt = bgeot::geometric_trans_descriptor(meshType);
+
         if (true){
             auto pbDim = pgt->dim();
             assert(N==pbDim);
         }
 
         std::vector<size_type> nsubdiv(N);
-        std::vector<size_type> lengths(N);
+        std::vector<scalar_type> lengths(N);
         nsubdiv[0] = Nx;
         nsubdiv[1] = Ny;
+        nsubdiv[2] = Nz;
         lengths[0] = Lx;
         lengths[1] = Ly;
-        nsubdiv[2] = Nz;
         lengths[2] = Lz;
     
         // create the mesh
@@ -41,7 +40,10 @@ namespace gf {
             M(i,i) = lengths[i];
 
         mesh.transformation(M);
-        
+        std::cout << "Lx = " << Lx << ", -Lx = " << -Lx << std::endl;
+        base_small_vector v {-0.5*Lx,0.,0.};
+        mesh.translation(v);
+
         //!\todo: need to be sure that i can build the fracture according to the normal ...
 
     }
@@ -71,9 +73,11 @@ namespace gf {
                     rightConvexesList.add(i);
                     insertedRight = true;
                 }
-                else if (!insertedCentered)
+                if (abs(pt[0]) < 1.e-6 && !insertedCentered){
+                    std::cout << "Adding an element in Fault convexList" << std::endl;
                     centeredConvexesList.add(i);
                     insertedCentered = true;
+                }
             }
         }
         regions["BulkLeft"] = std::make_unique<Bulk>(mesh, leftConvexesList, SideType::LEFT);

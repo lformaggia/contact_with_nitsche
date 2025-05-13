@@ -13,8 +13,6 @@ namespace gf {
      */
     class MeshBuilderStrategy{
     public:
-
-        using RegionMapType = std::map<std::string, std::unique_ptr<MeshRegion>>;
         /**
          * @brief Null method to build the mesh, overridden in the hierarchy
          * They get a reference to the mesh object, modifying it

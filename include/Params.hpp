@@ -15,7 +15,7 @@ namespace gf {
         size_type Nz;
     };
     struct Physics {
-        scalar_type M_E;
+        scalar_type M_E0;
         scalar_type M_nu;
         scalar_type M_lambda;
         scalar_type M_mu;
@@ -39,13 +39,19 @@ namespace gf {
 
     struct Params {
         Domain domain;
-        Physics phyisics;
+        Physics physics;
         It it;
         Nitsche nitsche;
         Time time;
-
-        Params(const GetPot&);
+        std::string meshFile;
+        bool verbose;
+        
+        Params(const GetPot&, const std::string&, bool);
+        
     };
+
+    
+    std::ostream& operator<<(std::ostream&, const Params&);
 
 } // namespace gf
 
