@@ -1,14 +1,24 @@
 [physics]
 E = 25000                       % Young modulus
 nu = 0.3                        % Poisson ratio
-bulkLoad = [0.0,0.0,-9.81]    % gravity
+bulkLoad = [0.0,0.0,-9.81]      % gravity
+
+regionDisp = [1,4,5]
+bdDisp1 = [sin(x),y+3,0]
+bdDisp2 = [0,0,0]
+bdDisp2 = [0,0,0]
+
+regionLoad = [7,10]
+bdLoad1 = [0,0,-2*t+x*y + z^2]
+bdLoad2 = [0,-3, 0]
+
 [../]
 
 [domain]
 Lx = 2                          % Lenght of domain side along x
 Ly = 2                          % Lenght of domain side along y
 Lz = 2                          % Lenght of domain side along z
-Nx = 4                          % Number of subdivisions along x
+Nx = 2                          % Number of subdivisions along x
 Ny = 2                          % Number of subdivisions along y
 Nz = 2                          % Number of subdivisions along z
 meshType = GT_QK(3,1)

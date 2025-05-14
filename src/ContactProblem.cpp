@@ -62,8 +62,8 @@ namespace gf{
         }
         ////////////////////////
 
-
         M_BC = std::make_unique<BCHandler>(M_mesh, M_params.domain);
+        
         M_BC->readBC(M_datafile);
         // M_FEM.setMeshFem(M_datafile, M_mesh, M_regions);
     }

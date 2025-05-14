@@ -20,7 +20,7 @@ namespace gf {
         std::unordered_map<size_type,getfem::mesh_region> M_IdToRegion;
         BCListType M_BCList;
         
-        MuParserInterface::muParserXInterface<4> M_parser;
+        MuParserInterface2::muParserXInterface M_parser;
 
         VectorFunctionType buildBCFunctionFromExpressions(const std::vector<std::string>&);
 

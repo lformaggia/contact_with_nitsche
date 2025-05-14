@@ -11,7 +11,7 @@ INCLUDE = -I$(GETFEM_PATH)/include -I$(GETFEM_PATH)/src -I$(GETFEM_PATH)/src/gmm
 CXXFLAGS = $(INCLUDE) $(OPTFLAGS) 
 
 # Executable source
-EXESRCS = *.cpp
+EXESRCS = main.cpp
 
 # Executable object file
 EXEOBJS = $(EXESRCS:.cpp = .o)
@@ -32,6 +32,7 @@ LDLIBS = /usr/local/lib/libgetfem.a
 ####### ADDED
 LDLIBS += -Wl,-rpath,/usr/lib/x86_64-linux-gnu
 LDLIBS += -L$(MU_PARSERX_PATH) -lmuparserx
+
 ######## END ADDED
 
 # Laptop

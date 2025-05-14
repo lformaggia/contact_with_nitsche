@@ -8,8 +8,8 @@ namespace gf{
     protected:
         getfem::mesh_region M_region; ///< the mesh region where to apply the BC
         VectorFunctionType M_function; ///< The function
-        BCType M_BCtype;
-        size_type M_ID;
+        BCType M_BCtype; ///< Dirichlet, Neumann or Mixed
+        size_type M_ID; ///< the ID of the boundary face where the BC is applied
 
     public:
 
@@ -24,6 +24,12 @@ namespace gf{
          * @brief Return the BC type
          */
         virtual std::string type() const = 0;
+
+        /**
+         * @brief Returns the ID of the face where the region is applied,
+         * accordingly to the map built from BCHandler
+         */
+        size_type ID() const { return M_ID; }
 
         virtual ~BC() = default;
 

@@ -20,4 +20,13 @@ namespace gf {
         return components;
     }
 
-}
+    std::vector<size_type>
+    toVec(std::string stringValue) {
+        auto components = splitString(stringValue);
+        std::vector<size_t> result; 
+        for (const auto& c:components)
+            result.emplace_back(std::stod(c));
+        return result;
+    }
+
+} // namespace gf

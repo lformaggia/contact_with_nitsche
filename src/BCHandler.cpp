@@ -2,6 +2,8 @@
 #include "Utils.hpp"
 #include <sstream>
 
+bool DEBUGBCH = true;
+
 namespace gf {
 
     BCHandler::BCHandler(const getfem::mesh& mesh, const Domain& domain)
@@ -9,7 +11,7 @@ namespace gf {
 
         // Get the domain dimensions
         scalar_type Lx = domain.Lx;
-        scalar_type Ly = domain.Ly; 
+        scalar_type Ly = domain.Ly;
         scalar_type Lz = domain.Lz;
 
         // Construct the map regionID -> meshRegion
@@ -97,8 +99,14 @@ namespace gf {
     void BCHandler::readBC(GetPot& datafile) {
         getfem::outer_faces_of_mesh(M_mesh, M_border_faces);
         read<BCType::Dirichlet>(datafile);
+        if (DEBUGBCH){
+            std::clog << "I found " << M_BCList[BCType::Dirichlet].size() << " Dirichlet BCs!" << std::endl;
+        }
         read<BCType::Neumann>(datafile);
         read<BCType::Mixed>(datafile);
+
+        if (DEBUGBCH){
+        }
     }
 
     VectorFunctionType
@@ -123,6 +131,7 @@ namespace gf {
             };
 
             parsedFunctionsVec[k] = std::move(func);
+
         }
 
         // Combine and return the result
@@ -141,49 +150,52 @@ namespace gf {
     template <BCType T>
     void BCHandler::read(GetPot& datafile){
 
-        std::vector<size_type> regionsID;
         std::string regionsStr;
         if constexpr (T == BCType::Dirichlet) { // read the regionDisp list
-            regionsStr = datafile("physics.regionDisp", "");
+            std::clog << "read(): physics/E = " << datafile("physics/E", -1.0) << "\n";
+            regionsStr = datafile("physics/regionDisp", "");
         }
         else if constexpr (T == BCType::Neumann) {
-            regionsStr = datafile("physics.regionLoad", "");
+            regionsStr = datafile("physics/regionLoad", "");
         }
         else if constexpr (T == BCType::Mixed) {
-            regionsStr = datafile("physics.regionMix", "");
+            regionsStr = datafile("physics/regionMix", "");
         }
 
-        std::istringstream istr(regionsStr);
-        size_type val;
-        while (istr >> val) regionsID.emplace_back(val);
+        if (DEBUGBCH)
+            std::clog << "regionStr: " << regionsStr << "\n";
+
+        std::vector<std::size_t> regionsID = gf::toVec(regionsStr);
 
         for (size_t i = 0; i < regionsID.size(); ++i) {
             std::ostringstream varname;
 
             if constexpr (T == BCType::Dirichlet) { // read the bdDisp list
-                varname << "physics.bdDisp" << (i + 1);  // bdDisp1, bdDisp2, ...
-                if (!datafile.search(varname.str().c_str()))
-                    throw std::logic_error("Missing Dirichlet expression");
+                varname << "physics/bdDisp" << (i + 1);  // bdDisp1, bdDisp2, ...
+                if (DEBUGBCH) std::clog << "varname = " << varname.str() << std::endl; 
             }
             else if constexpr (T == BCType::Neumann) {
-                varname << "physics.bdLoad" << (i + 1);  // bdLoad1, bdLoad2, ...
-                if (!datafile.search(varname.str().c_str()))
-                    throw std::logic_error("Missing Neumann expression");
+                varname << "physics/bdLoad" << (i + 1);  // bdLoad1, bdLoad2, ...
             }
             else if constexpr (T == BCType::Mixed) {
                  /** !\todo */
             }
 
             std::string stringValue = datafile(varname.str().c_str(), "");
+            if (stringValue.empty())
+                throw std::runtime_error("String Values undetected!");
 
-            std::vector<std::string> components = splitString(stringValue);
+            // std::vector<std::string> components = splitString(stringValue);
 
-            // Parse using muParserInterface
-            VectorFunctionType func = buildBCFunctionFromExpressions(components);
+            // // Parse using muParserInterface
+            // VectorFunctionType func = buildBCFunctionFromExpressions(components);
+
+            // Use muparser (alternative to buildBCFunctionFromExpressions)
+            M_parser.set_expression(stringValue);
 
             if constexpr (T == BCType::Dirichlet) { // build BCDir and add to M_BCList
                 // Build the BCDir object bc
-                auto bc = std::make_unique<BCDir>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func), BCType::Dirichlet);
+                auto bc = std::make_unique<BCDir>(M_IdToRegion[regionsID[i]], regionsID[i], M_parser, BCType::Dirichlet);
                 // Add to map
                 M_BCList[BCType::Dirichlet].emplace_back(std::move(bc));
             }
