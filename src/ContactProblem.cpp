@@ -36,6 +36,8 @@ namespace gf{
 
         ////////////////////////
         if (DEBUG){
+            // std::clog << "Fault is boundary of Bulkleft?"
+            //     << M_regions["Fault"]->region().region_is_faces_of() << std::endl;
             /** \todo: output information related to the mesh regions */
             std::clog << "Region Information:" << std::endl;
             for (const auto& [name,r] : M_regions) {

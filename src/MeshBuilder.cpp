@@ -1,7 +1,7 @@
 #include "MeshBuilder.hpp"
 #include "MeshRegion.hpp"
 
-bool DEBUGIR = true;
+bool DEBUGIR = false;
 namespace gf {
 
     void BuiltInBuilder::buildMesh(getfem::mesh& mesh) const
