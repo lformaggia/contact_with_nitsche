@@ -1,6 +1,7 @@
 #include "MeshBuilder.hpp"
 #include "MeshRegion.hpp"
 
+bool DEBUGIR = true;
 namespace gf {
 
     void BuiltInBuilder::buildMesh(getfem::mesh& mesh) const
@@ -54,6 +55,7 @@ namespace gf {
         dal::bit_vector leftConvexesList;
         dal::bit_vector rightConvexesList;
         dal::bit_vector centeredConvexesList;
+
         
         // loop over all convexes in mesh
         for (dal::bv_visitor i(mesh.convex_index()); !i.finished(); ++i){
@@ -62,9 +64,17 @@ namespace gf {
 
             // get the coords of the points of convex i
             auto local_points = mesh.points_of_convex(i);
+            
+            if (DEBUGIR){
+                // std::clog << "Element: " << i << std::endl;
+                // std::clog << "--Points\n";
+            }
 
             // loop over the points of a convex
             for (const auto &pt: local_points){
+                if (DEBUGIR)
+                    std::clog <<"["<<pt[0]<<","<<pt[1]<<","<<pt[2]<<"]\n";
+                
                 if (pt[0] < -1e-6 && !insertedLeft){ // if one point has x < 0 --> left bulk region
                     leftConvexesList.add(i);
                     insertedLeft = true;
@@ -73,8 +83,13 @@ namespace gf {
                     rightConvexesList.add(i);
                     insertedRight = true;
                 }
-                if (abs(pt[0]) < 1.e-6 && !insertedCentered){
-                    std::cout << "Adding an element in Fault convexList" << std::endl;
+                if (std::abs(pt[0]) < 1.e-6 && !insertedCentered){
+                    if (DEBUGIR) {
+                        std::clog << "Adding an element in Fault convexList: "
+                        << "pt[0] = " << pt[0]
+                        << ", abs(pt[0]) = " << std::abs(pt[0]) << " < 1.e-6? "
+                        << std::boolalpha << (std::abs(pt[0]) < 1.e-6) << std::endl;
+                    }
                     centeredConvexesList.add(i);
                     insertedCentered = true;
                 }
@@ -83,6 +98,7 @@ namespace gf {
         regions["BulkLeft"] = std::make_unique<Bulk>(mesh, leftConvexesList, SideType::LEFT);
         regions["BulkRight"] = std::make_unique<Bulk>(mesh, rightConvexesList, SideType::RIGHT);
         regions["Fault"] = std::make_unique<Fault>(mesh,centeredConvexesList);
+
     }
 
 
