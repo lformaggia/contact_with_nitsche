@@ -4,13 +4,13 @@ nu = 0.3                        % Poisson ratio
 bulkLoad = [0.0,0.0,-9.81]      % gravity
 
 regionDisp = [1,4,5]
-bdDisp1 = [sin(x),y+3,0]
-bdDisp2 = [0,0,0]
-bdDisp2 = [0,0,0]
+bdDisp1 = {sin(x[0]),x[2]+3,t}
+bdDisp2 = {sin(x[0]),x[1]^2,t*x[2]}
+bdDisp3 = {0,3,4*x[0]}
 
 regionLoad = [7,10]
-bdLoad1 = [0,0,-2*t+x*y + z^2]
-bdLoad2 = [0,-3, 0]
+bdLoad1 = {0,0,-2*t+x[0]*x[1]+x[2]^2}
+bdLoad2 = {0,-3,0}
 
 [../]
 
@@ -18,9 +18,9 @@ bdLoad2 = [0,-3, 0]
 Lx = 2                          % Lenght of domain side along x
 Ly = 2                          % Lenght of domain side along y
 Lz = 2                          % Lenght of domain side along z
-Nx = 2                          % Number of subdivisions along x
-Ny = 2                          % Number of subdivisions along y
-Nz = 2                          % Number of subdivisions along z
+Nx = 8                          % Number of subdivisions along x
+Ny = 4                          % Number of subdivisions along y
+Nz = 4                          % Number of subdivisions along z
 meshType = GT_QK(3,1)
 [../]
 
@@ -38,4 +38,7 @@ dt = 0.05                       % timestep
 [../]
 
 [numerics]
-GT_PK(3,1)
+FEMTypeDisplacement = FEM_QK(3,2)
+FEMTypeStress = FEM_QK(3,1)
+FEMTypeRhs = FEM_QK(3,1)
+FEMTypeCoeff = FEM_QK(3,0)

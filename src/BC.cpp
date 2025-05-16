@@ -2,12 +2,10 @@
 
 namespace gf {
 
-    BC::BC(const getfem::mesh_region& region, size_type regionID, VectorFunctionType&& func, BCType bctype)
-    : M_region(region), M_ID(regionID), M_function(std::move(func)), M_BCtype(bctype)
+    BC::BC(const getfem::mesh_region& region, size_type regionID, VectorFunctionType func, BCType bctype)
+    : M_region(region), M_ID(regionID), M_function(func), M_BCtype(bctype)
     {
     }
-
-
 
     // BCNeu::BCNeu(const GetPot& datafile, bool isN)
     // : 
@@ -22,9 +20,6 @@ namespace gf {
     //     }
         
     // }
-
-
-
 
 
 } // namesace gf

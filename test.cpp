@@ -45,6 +45,7 @@ int main(int argc, char * argv[]){
     muParserXInterface mx;
 
     std::vector<double> x = {1, 2, 3};
+    double t = 100;
     std::vector<std::string> setexpr{"x[0]+sin(x[1])", "0.", "x[1]^2"};
     // for (auto& expr: setexpr){
     //     mx.set_expression(expr);
@@ -52,27 +53,27 @@ int main(int argc, char * argv[]){
     //     << mx(x)[0] << std::endl;
     //     expr.clear();
     // }
-    std::string expr = "{ x[0] + sin(x[1]), 0., x[1]^2 }";
+    std::string expr = "{ x[0] + sin(x[1]), sqrt(t)+x[2], x[1]^2 }";
     mx.set_expression(expr);
     std::cout << "Evaluating: mx(x) = ("
-        << mx(x)[0] << ", " << mx(x)[1] << ", " << mx(x)[2] << ")" << std::endl;
+        << mx(x,t)[0] << ", " << mx(x,t)[1] << ", " << mx(x,t)[2] << ")" << std::endl;
     expr.clear();
 
-    using VectorFunctionType = std::function<std::vector<double>(std::vector<double>)>;
+    using VectorFunctionType = std::function<std::vector<double>(std::vector<double>, double)>;
     
-    expr = "{ x[0] + log(x[2]), 0., 3*x[1]}";
+    expr = "{ x[0] + log(x[2]), 0., 3*x[1] + t}";
     mx.set_expression(expr);
     VectorFunctionType myFunc(mx);
     std::cout << "Evaluating: myFunc(x) = ("
-        << myFunc(x)[0] << ", " << myFunc(x)[1] << ", " << myFunc(x)[2] << ")" << std::endl;
+        << myFunc(x,t)[0] << ", " << myFunc(x,t)[1] << ", " << myFunc(x,t)[2] << ")" << std::endl;
     expr.clear();
 
-    expr = "{ x[0] , x[1], x[2]}";
-    mx.set_expression(expr);
-    VectorFunctionType myFunc2(mx);
-    std::cout << "Evaluating: myFunc2(x) = ("
-        << myFunc2(x)[0] << ", " << myFunc2(x)[1] << ", " << myFunc2(x)[2] << ")" << std::endl;
-    expr.clear();
+    // expr = "{ x[0] , x[1], x[2]}";
+    // mx.set_expression(expr);
+    // VectorFunctionType myFunc2(mx);
+    // std::cout << "Evaluating: myFunc2(x) = ("
+    //     << myFunc2(x)[0] << ", " << myFunc2(x)[1] << ", " << myFunc2(x)[2] << ")" << std::endl;
+    // expr.clear();
 
     return 0;
 

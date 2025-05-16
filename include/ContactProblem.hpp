@@ -59,6 +59,8 @@ namespace gf{
         RegionMapType M_regions; ///< The mesh regions (BulkLeft, BulkRight, Fault)
         std::unique_ptr<BCHandler> M_BC; ///< Class that stores BC information
         FEMManager M_FEM; ///< Stores the getfem::mesh_fem objects
+        getfem::mesh_im  M_IntegrationMethod; ///< Integration methods
+        getfem::im_data M_imData;
         // TimeManager M_time; ///< Struct that keeps information for evolutionary problems
         // SolType M_U; ///< Vector to store the solution 
         // StressType M_stress; ///< Vector that stores the stress information

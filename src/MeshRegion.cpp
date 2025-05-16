@@ -1,6 +1,6 @@
 #include "MeshRegion.hpp"
 
-bool DEBUGMR = true;
+bool DEBUGMR = false;
 
 namespace gf {
     
@@ -82,14 +82,14 @@ namespace gf {
 
             }
         }
-        std::clog << "Elements in the Fault region: ";
-        for (getfem::mr_visitor i(M_region); !i.finished(); ++i){
-            std::clog << i.cv() << " - face ";
-            std::clog << i.f() << "\n";
-        }
-        std::clog << std::endl;
-
         if (DEBUGMR){
+            std::clog << "Elements in the Fault region: ";
+            for (getfem::mr_visitor i(M_region); !i.finished(); ++i){
+                std::clog << i.cv() << " - face ";
+                std::clog << i.f() << "\n";
+            }
+            std::clog << std::endl;
+
             for (const auto& [f,cv]: convexesSharingFace)
                 std::clog << "Face "<<f
                     <<" is between elements ("

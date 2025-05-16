@@ -13,7 +13,7 @@ namespace gf{
 
     public:
 
-        BC(const getfem::mesh_region&, size_type, VectorFunctionType&&, BCType);
+        BC(const getfem::mesh_region&, size_type, VectorFunctionType, BCType);
 
         /**
          * @brief Returns the region (read only)
@@ -50,8 +50,9 @@ namespace gf{
     class BCDir : public BC {
 
     public:
-        BCDir(const getfem::mesh_region& region, size_type ID, VectorFunctionType&& f, BCType bctype)
-        : BC(region, ID, std::move(f), bctype){}
+        BCDir(const getfem::mesh_region& region, size_type ID, VectorFunctionType f, BCType bctype)
+        : BC(region, ID, f, bctype){
+        }
 
         std::string type() const override { return "Dirichlet"; }
 
@@ -62,8 +63,8 @@ namespace gf{
         bool M_isNormal;
 
     public:
-        BCNeu(const getfem::mesh_region& region, size_type ID, VectorFunctionType&& f, BCType bctype)
-        : BC(region, ID, std::move(f), bctype){}
+        BCNeu(const getfem::mesh_region& region, size_type ID, VectorFunctionType f, BCType bctype)
+        : BC(region, ID, f, bctype){}
 
         std::string type() const override { return "Neumann"; }
 

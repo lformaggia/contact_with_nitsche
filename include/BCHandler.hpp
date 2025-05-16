@@ -20,9 +20,9 @@ namespace gf {
         std::unordered_map<size_type,getfem::mesh_region> M_IdToRegion;
         BCListType M_BCList;
         
-        MuParserInterface2::muParserXInterface M_parser;
+        muParserXInterface M_parser;
 
-        VectorFunctionType buildBCFunctionFromExpressions(const std::vector<std::string>&);
+        // VectorFunctionType buildBCFunctionFromExpressions(const std::vector<std::string>&);
 
         template <BCType T>
         void read(GetPot&);

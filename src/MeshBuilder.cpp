@@ -7,9 +7,9 @@ namespace gf {
     void BuiltInBuilder::buildMesh(getfem::mesh& mesh) const
     {
         size_type N = M_datafile("domain/problemDimension", 3);
-        size_type Lx = M_datafile("domain/Lx", 2); // lenghts
-        size_type Ly = M_datafile("domain/Ly", 4);
-        size_type Lz = M_datafile("domain/Lz", 4);
+        scalar_type Lx = M_datafile("domain/Lx", 2); // lenghts
+        scalar_type Ly = M_datafile("domain/Ly", 4);
+        scalar_type Lz = M_datafile("domain/Lz", 4);
         size_type Nx = M_datafile("domain/Nx", 4); // number of subdivisions
         size_type Ny = M_datafile("domain/Ny", 16);
         size_type Nz = M_datafile("domain/Nz", 16);
@@ -39,9 +39,8 @@ namespace gf {
         bgeot::base_matrix M(N,N);
         for (size_type i = 0; i < N; ++i)
             M(i,i) = lengths[i];
-
         mesh.transformation(M);
-        std::cout << "Lx = " << Lx << ", -Lx = " << -Lx << std::endl;
+
         base_small_vector v {-0.5*Lx,0.,0.};
         mesh.translation(v);
 
@@ -55,7 +54,6 @@ namespace gf {
         dal::bit_vector leftConvexesList;
         dal::bit_vector rightConvexesList;
         dal::bit_vector centeredConvexesList;
-
         
         // loop over all convexes in mesh
         for (dal::bv_visitor i(mesh.convex_index()); !i.finished(); ++i){
@@ -114,7 +112,7 @@ namespace gf {
         std::map<std::string, size_type> regionMap;
         // getfem::import_mesh_gmsh(M_meshFile, mesh, regionMap);
 
-        /* ... */
+        /** \todo ... */
     
         auto itLeft = regionMap.find("BulkLeft");
         auto itRight = regionMap.find("BulkRight");

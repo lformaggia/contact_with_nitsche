@@ -25,16 +25,27 @@ namespace gf {
         scalar_type maxIt;
         scalar_type rtol;
         scalar_type atol;
-        /* other parameters ...*/
+        /** \todo:
+         * add other Newton Params, if needed
+         */
     };
     struct Nitsche {
         scalar_type theta;
         scalar_type gamma0;
+        /** \todo:
+         * add tolerances for Nitsche
+         */
     };
+    struct Numerics {
+        std::string integration;
+    }; 
     struct Time {
         scalar_type t0;
         scalar_type tend;
         scalar_type dt;
+        /** \todo:
+         * add backtracking parameters, if needed
+         * */
     };
 
     struct Params {
@@ -44,6 +55,7 @@ namespace gf {
         Nitsche nitsche;
         Time time;
         std::string meshFile;
+        Numerics numerics;
         bool verbose;
         
         Params(const GetPot&, const std::string&, bool);

@@ -1,10 +1,12 @@
 #ifndef HH_MUPARSERXINTERFACE2_HH
 #define HH_MUPARSERXINTERFACE2_HH
+
 #include "mpParser.h"
+#include "Core.hpp"
 #include <array>
 #include <iostream>
 #include <string>
-namespace MuParserInterface2
+namespace gf
 {
   /*! An interface to MuParserX to define a function
 
@@ -24,6 +26,7 @@ namespace MuParserInterface2
 
   class muParserXInterface
   {
+    
   public:
     //! Default constructor
     //!
@@ -32,16 +35,26 @@ namespace MuParserInterface2
     //! expressions
     muParserXInterface()
         : My_e(),
-          M_parser(mup::pckALL_NON_COMPLEX | mup::pckMATRIX), M_value{N, 0.0}
+        M_parser(mup::pckALL_NON_COMPLEX | mup::pckMATRIX),
+        M_value{N, 0.0},
+        M_time{}
     {
-      M_parser.DefineVar("x", mup::Variable(&M_value));
+        M_parser.DefineVar("x", mup::Variable(&M_value));
+        M_parser.DefineVar("t", mup::Variable(&M_time));
     }
+    
     //! Constructor that takes a string containing muParserX expression
-    muParserXInterface(int dim, const std::string expression) : N(dim), My_e(expression),
-                                                                M_parser(mup::pckALL_NON_COMPLEX | mup::pckMATRIX), M_value{N, 0.0}
+    muParserXInterface(int dim, const std::string expression)
+    : N(dim),
+    My_e(expression),
+    M_parser(mup::pckALL_NON_COMPLEX | mup::pckMATRIX),
+    M_value{N, 0.0},
+    M_time{}
     {
-      M_parser.DefineVar("x", mup::Variable(&M_value));
-      M_parser.SetExpr(My_e.c_str());
+        M_parser.DefineVar("x", mup::Variable(&M_value));
+        M_parser.DefineVar("t", mup::Variable(&M_time));
+
+        M_parser.SetExpr(My_e.c_str());
     }
 
     /*!
@@ -58,10 +71,13 @@ namespace MuParserInterface2
      */
     muParserXInterface(muParserXInterface const &mpi)
         : My_e(mpi.My_e),
-          M_parser(mup::pckALL_NON_COMPLEX | mup::pckMATRIX), M_value(N,1, 0.0)
+        M_parser(mup::pckALL_NON_COMPLEX | mup::pckMATRIX),
+        M_value(N, 1, 0.0),
+        M_time(0.0)
     {
-      M_parser.DefineVar("x", mup::Variable(&M_value));
-      M_parser.SetExpr(My_e.c_str());
+        M_parser.DefineVar("x", mup::Variable(&M_value));
+        M_parser.DefineVar("t", mup::Variable(&M_time));
+        M_parser.SetExpr(My_e.c_str());
     }
     /*!
      * The copy assignment operator
@@ -74,15 +90,17 @@ namespace MuParserInterface2
     muParserXInterface
     operator=(muParserXInterface const &mpi)
     {
-      if (this != &mpi)
-      {
-        this->My_e = mpi.My_e;
-        this->M_parser.ClearVar(); // clear the variables!
-        this->M_value = mpi.M_value;
-        M_parser.DefineVar("x", mup::Variable(&M_value));
-        M_parser.SetExpr(My_e.c_str());
-      }
-      return *this;
+        if (this != &mpi)
+        {
+            this->My_e = mpi.My_e;
+            this->M_parser.ClearVar(); // clear the variables!
+            this->M_value = mpi.M_value;
+            this->M_time = mpi.M_time;
+            M_parser.DefineVar("x", mup::Variable(&M_value));
+            M_parser.DefineVar("t", mup::Variable(&M_time));
+            M_parser.SetExpr(My_e.c_str());
+        }
+        return *this;
     }
 
     //! Sets the muparserX expression.
@@ -98,49 +116,48 @@ namespace MuParserInterface2
       M_parser.SetExpr(e.c_str());
     }
 
-    std::vector<double>
-    operator()(std::vector<double> const &x) const
+    base_small_vector
+    operator()(base_node x, scalar_type t) const
     {
-      for (int i = 0; i < N; ++i)
-      {
-        M_value.At(i) = x[i];// M_value è stato inizializzato come vettore colonna (r=2,c=1) e qui la sintassi con un solo indice funziona
-      }
-      // int rows = M_value.GetRows(); 
-      // int cols = M_value.GetCols();
-      // std::cout<<rows<<" "<<cols<<std::endl;
-      mup::Value ans;
-      std::vector<double> res(N);
-      try
-      {
-        ans = M_parser.Eval();
-        
         for (int i = 0; i < N; ++i)
         {
-          res[i] = ans.At(0,i).GetFloat(); // Il risultato è salvato in un vettore riga rows=1, cols=2 dunque va scorso così
+            M_value.At(i) = x[i];// M_value è stato inizializzato come vettore colonna (r=2,c=1) e qui la sintassi con un solo indice funziona
+            M_time = t;
         }
-      }
-      catch (mup::ParserError &error)
-      {            
-        std::cerr << "Muparsex error with code:" << error.GetCode()
-                  << std::endl;
-        
-        std::cerr << "While processing expression: " << error.GetExpr()
-                  << std::endl;
-        std::cerr << "Error Message: " << error.GetMsg() << std::endl;
-        throw error;
-      }
+        // int rows = M_value.GetRows(); 
+        // int cols = M_value.GetCols();
+        // std::cout<<rows<<" "<<cols<<std::endl;
+        mup::Value ans;
+        std::vector<double> res(N);
+        try
+        {
+            ans = M_parser.Eval();
+            
+            for (int i = 0; i < N; ++i)
+            {
+                res[i] = ans.At(0,i).GetFloat(); // Il risultato è salvato in un vettore riga rows=1, cols=2 dunque va scorso così
+            }
+        }
+        catch (mup::ParserError &error)
+        {            
+            std::cerr << "Muparsex error with code:" << error.GetCode() << std::endl;
+            std::cerr << "While processing expression: " << error.GetExpr() << std::endl;
+            std::cerr << "Error Message: " << error.GetMsg() << std::endl;
+            throw error;
+        }
 
-      return res;
+        return base_small_vector(res);
     }
 
-  private:
-    int N = 3;
-    // a copy of the muparserX expression, used for the copy operations
-    std::string My_e;
-    // The muparseX engine
-    mup::ParserX M_parser;
-    // The muparserX value used to set the variables in the engine
-    mutable mup::Value M_value;
-  };
+    private:
+        int N = 3;
+        // a copy of the muparserX expression, used for the copy operations
+        std::string My_e;
+        // The muparseX engine
+        mup::ParserX M_parser;
+        // The muparserX value used to set the variables in the engine
+        mutable mup::Value M_value;
+        mutable mup::Value M_time;
+    };
 } // namespace MuParserInterface
 #endif
