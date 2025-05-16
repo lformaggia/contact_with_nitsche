@@ -3,15 +3,14 @@
 
 #include "Core.hpp"
 #include "Params.hpp"
-#include "MeshBuilder.hpp"
-#include "MeshRegion.hpp"
+#include "Mesh.hpp"
 #include "BCHandler.hpp"
 #include "FEMManager.hpp"
 #include "GetPot"
 
 namespace gf{
 
-    /**
+    /** \todo: update
      * @brief The main class that orchestrates the problem for contact mechanics.
      * It stores the GetPot and the datafile, which needs to be shared between the different classes.
      * It allows to perfom 3d simulation on a 3D parallelepiped, with a structured conforming mesh, cut by
@@ -22,44 +21,40 @@ namespace gf{
     
         /**
          * @brief Constructor taking the data filename
-         * Initializes the stored GetPot object, which is needed by most of the methods
+         * 
          */
-        ContactProblem (const std::string& filename, const std::string& meshfile, bool verbose);
+        ContactProblem (const Mesh&, const Params&);
         
         /**
          * @brief Initialize the problem
-         * 1. build the mesh
-         * 2. build the mesh_regions
-         * 3. import BCs
-         * 4. set FE spaces
+         * 1. import BCs
+         * 2. set FE spaces
+         * 3. set integration method
          */
         void init();
 
-        /**
-         * @brief Assemble the linear system based on the GWFL (Generic Weak Form Language)
-         */
-        void assemble();
+        // /**
+        //  * @brief Assemble the linear system based on the GWFL (Generic Weak Form Language)
+        //  */
+        // void assemble();
 
-        /**
-         * @brief Solve the linear system
-         */
-        void solve();
+        // /**
+        //  * @brief Solve the linear system
+        //  */
+        // void solve();
 
-        /**
-         * @brief Export vtk results for visualization
-         */
-        void exportResults() const;
+        // /**
+        //  * @brief Export vtk results for visualization
+        //  */
+        // void exportResults() const;
         
     private:
 
-        GetPot M_datafile;
-        Params M_params;
-        std::unique_ptr<MeshBuilderStrategy> M_meshBuilder; ///< MeshBuilder
-        getfem::mesh M_mesh; ///< The mesh
-        RegionMapType M_regions; ///< The mesh regions (BulkLeft, BulkRight, Fault)
-        std::unique_ptr<BCHandler> M_BC; ///< Class that stores BC information
+        const Params& M_params;
+        const Mesh& M_mesh; ///< The mesh
+        BCHandler M_BC; ///< Class that stores BC information
         FEMManager M_FEM; ///< Stores the getfem::mesh_fem objects
-        getfem::mesh_im  M_IntegrationMethod; ///< Integration methods
+        getfem::mesh_im  M_integrationMethod; ///< Integration methods
         getfem::im_data M_imData;
         // TimeManager M_time; ///< Struct that keeps information for evolutionary problems
         // SolType M_U; ///< Vector to store the solution 

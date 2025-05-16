@@ -5,101 +5,14 @@ bool DEBUGBC = false;
 
 namespace gf {
 
-    BCHandler::BCHandler(const getfem::mesh& mesh, const Domain& domain)
-    : M_mesh(mesh) {
-
-        // Get the domain dimensions
-        scalar_type Lx = domain.Lx;
-        scalar_type Ly = domain.Ly;
-        scalar_type Lz = domain.Lz;
-
-        // Construct the map regionID -> meshRegion
-        getfem::outer_faces_of_mesh(mesh, M_border_faces);
-
-        M_IdToRegion[1] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{-Lx/2.,0.,0.},
-            base_node{0.,Ly,0.});
-        M_IdToRegion[2] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{0.,Ly,0.},
-            base_node{-Lx/2,Ly,Lz});
-        M_IdToRegion[3] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{-Lx/2,Ly,Lz},
-            base_node{0.,0.,Lz});
-        M_IdToRegion[4] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{0.,0.,Lz},
-            base_node{-Lx/2.,0.,0.});
-        M_IdToRegion[5] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{0.,0.,0.},
-            base_node{Lx/2.,Ly,0.});
-        M_IdToRegion[6] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{Lx/2.,Ly,0.},
-            base_node{0.,Ly,Lz});
-        M_IdToRegion[7] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{0.,Ly,Lz},
-            base_node{Lx/2.,0.,Lz});
-        M_IdToRegion[8] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{Lx/2.,0.,Lz},
-            base_node{0.,0.,0.});
-
-        // alternatively:
-        // M_IdToRegion[9] = getfem::select_faces_of_normal(mesh, border_faces,
-        //    base_small_vector(-1.,0.,0.), 0.01);
-        // M_IdToRegion[10] = getfem::select_faces_of_normal(mesh, border_faces,
-        //    base_small_vector(1.,0.,0.), 0.01);
-        M_IdToRegion[9] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{-Lx/2.,0.,0.},
-            base_node{-Lx/2.,Ly,Lz});
-        M_IdToRegion[10] = getfem::select_faces_in_box(
-            mesh, M_border_faces,
-            base_node{Lx/2.,0.,0},
-            base_node{Lx/2.,Ly,Lz});
-
-
-        // ALTERNATIVE:
-        // for (getfem::mr_visitor it(border_faces); !it.finished(); ++it) {
-        //     assert(it.is_face());
-        //     base_node x = /* get the centroid of the face*/
-
-        //     base_small_vector un = mesh.normal_of_face_of_convex(it.cv(), it.f());
-        //     un /= gmm::vect_norm2(un);
-
-        //     if ((un[2] + 1.0) < 1.0E-7)
-        //         M_IdToRegion[1].add(it.cv(), it.f());
-        //     else if ((un[1] - 1.0 < 1.0E-7) && x[0] < 0) 
-        //         M_IdToRegion[2].add(it.cv(),it.f());
-        //     else if ((un[2] - 1.0 < 1.0E-7) && x[0] < 0)
-        //         M_IdToRegion[3].add(it.cv(),it.f());
-        //     else if ((un[1] + 1.0 < 1.0E-7) && x[0] < 0)
-        //         M_IdToRegion[4].add(it.cv(),it.f());
-        //     else if ((un[2] + 1.0) < 1.0E-7)
-        //         M_IdToRegion[5].add(it.cv(), it.f());
-        //     else if ((un[1] - 1.0 < 1.0E-7) && x[0] > 0) 
-        //         M_IdToRegion[6].add(it.cv(),it.f());
-        //     else if ((un[2] - 1.0 < 1.0E-7) && x[0] > 0)
-        //         M_IdToRegion[7].add(it.cv(),it.f());
-        //     else if ((un[1] + 1.0 < 1.0E-7) && x[0] > 0)
-        //         M_IdToRegion[8].add(it.cv(),it.f());
-        //     else if (un[0] + 1.0 < 1.0E-7)
-        //         M_IdToRegion[9].add(it.cv(),it.f());
-        //     else if (un[0] - 1.0 < 1.0E-7)
-        //         M_IdToRegion[10].add(it.cv(),it.f());
-        // }
+    BCHandler::BCHandler(const getfem::mesh& m)
+    : M_mesh(m) {
     }
 
-    void BCHandler::readBC(GetPot& datafile) {
-        getfem::outer_faces_of_mesh(M_mesh, M_border_faces);
-        read<BCType::Dirichlet>(datafile);
-        read<BCType::Neumann>(datafile);
-        read<BCType::Mixed>(datafile);
+    void BCHandler::readBC(const GetPot& gp, const BoundaryMapType& bds) {
+        read<BCType::Dirichlet>(gp, bds);
+        read<BCType::Neumann>(gp,bds);
+        read<BCType::Mixed>(gp,bds);
     }
 
     // VectorFunctionType
@@ -141,28 +54,27 @@ namespace gf {
 
 
     template <BCType T>
-    void BCHandler::read(GetPot& datafile){
+    void BCHandler::read(const GetPot& datafile, const BoundaryMapType& bds){
 
         std::string regionsStr;
-        if constexpr (T == BCType::Dirichlet) { // read the regionDisp list
+        if constexpr (T == BCType::Dirichlet) // read the regionDisp list
             regionsStr = datafile("physics/regionDisp", "");
-        }
-        else if constexpr (T == BCType::Neumann) {
+        else if constexpr (T == BCType::Neumann) 
             regionsStr = datafile("physics/regionLoad", "");
-        }
-        else if constexpr (T == BCType::Mixed) {
+        else if constexpr (T == BCType::Mixed)
             regionsStr = datafile("physics/regionMix", "");
-        }
 
         std::vector<std::size_t> regionsID = gf::toVec(regionsStr);
+
+        M_BCStrings[T].reserve(regionsID.size()); // not really needed
 
         for (size_t i = 0; i < regionsID.size(); ++i) {
             std::ostringstream varname;
 
             if constexpr (T == BCType::Dirichlet) // read the bdDisp list
-                varname << "physics/bdDisp" << (i + 1);  // bdDisp1, bdDisp2, ...
+                varname << "physics/bdDisp" << (i + 1); // bdDisp1, bdDisp2, ...
             else if constexpr (T == BCType::Neumann)
-                varname << "physics/bdLoad" << (i + 1);  // bdLoad1, bdLoad2, ...
+                varname << "physics/bdLoad" << (i + 1); // bdLoad1, bdLoad2, ...
             else if constexpr (T == BCType::Mixed) {
                  /** !\todo */
             }
@@ -178,24 +90,25 @@ namespace gf {
 
             // Use muparser (alternative to buildBCFunctionFromExpressions)
             M_parser.set_expression(stringValue);
+            M_BCStrings[T].emplace_back(stringValue);
 
             if constexpr (T == BCType::Dirichlet) { // build BCDir and add to M_BCList
                 // Build the BCDir object bc
-                auto bc = std::make_unique<BCDir>(M_IdToRegion[regionsID[i]], regionsID[i], M_parser, BCType::Dirichlet);
+                auto bc = std::make_unique<BCDir>(*(bds.at(regionsID[i])), regionsID[i], M_parser, T);
                 // Add to map
-                M_BCList[BCType::Dirichlet].emplace_back(std::move(bc));
+                M_BCList[T].emplace_back(std::move(bc));
             }
 
             else if constexpr (T == BCType::Neumann) {
                 // Build the BCNeu object bc
-                auto bc = std::make_unique<BCNeu>(M_IdToRegion[regionsID[i]], regionsID[i], M_parser, BCType::Neumann);
+                auto bc = std::make_unique<BCNeu>(*(bds.at(regionsID[i])), regionsID[i], M_parser, T);
                 // Add to map
-                M_BCList[BCType::Neumann].emplace_back(std::move(bc));
+                M_BCList[T].emplace_back(std::move(bc));
             }
 
             // else if constexpr (T == BCType::Mixed) { /** !\todo */
             //     // Build the BCMixed object bc
-            //     auto bc = std::make_unique<BCMix>(M_IdToRegion[regionsID[i]], regionsID[i], std::move(func) /** !\todo */);
+            //     auto bc = std::make_unique<BCMix>(bds.at(regionsID[i]), regionsID[i], std::move(func) /** !\todo */);
             //     // Add to map
             //     M_BCList[BCType::Mixed].emplace_back(std::move(bc));
             // }

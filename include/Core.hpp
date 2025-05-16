@@ -62,8 +62,19 @@ namespace gf {
         Mixed
     };
 
+    // enum RegionType {
+    //     BulkLeft,
+    //     BulkRight,
+    //     Fault
+    // };
+
+
+    // forward declarations
     class MeshRegion;
+    class Boundary;
+
     using RegionMapType = std::map<std::string, std::unique_ptr<MeshRegion>>;
+    using BoundaryMapType = std::map<size_type, std::unique_ptr<Boundary>>;
 
 
 } // namespace gf

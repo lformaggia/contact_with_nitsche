@@ -2,8 +2,8 @@
 
 namespace gf {
 
-    BC::BC(const getfem::mesh_region& region, size_type regionID, VectorFunctionType func, BCType bctype)
-    : M_region(region), M_ID(regionID), M_function(func), M_BCtype(bctype)
+    BC::BC(const Boundary& bdRegion, size_type regionID, VectorFunctionType func, BCType bctype)
+    : M_region(bdRegion), M_ID(regionID), M_function(func), M_BCtype(bctype)
     {
     }
 

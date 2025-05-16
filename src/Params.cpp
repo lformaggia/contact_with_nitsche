@@ -4,14 +4,19 @@
 
 namespace gf {
 
-    Params::Params(const GetPot& datafile, const std::string& meshfile, bool ver)
-        : domain{
+    Params::Params(const std::string& filename, const std::string& meshfile, bool ver)
+        : datafile{
+            filename.c_str()
+        },
+        domain{
+            datafile("domain/dim", 3),
             datafile("domain/Lx", 1.0),
             datafile("domain/Ly", 1.0),
             datafile("domain/Lz", 1.0),
             datafile("domain/Nx", 1),
             datafile("domain/Ny", 1),
-            datafile("domain/Nz", 1)
+            datafile("domain/Nz", 1),
+            datafile("domain/meshType", "GT_QK(3,1)")
         },
         physics{
             datafile("physics/E", 0.0),
@@ -33,6 +38,9 @@ namespace gf {
             datafile("time/t0", 0.0),
             datafile("time/tend", 1.0),
             datafile("time/dt", 0.1)
+        },
+        numerics{
+            datafile("numerics/integration","IM_HEXAHEDRON(5)")
         },
         meshFile{meshfile},
         verbose{ver}

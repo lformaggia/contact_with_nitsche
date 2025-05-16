@@ -3,6 +3,7 @@
 #define _MESH_BUILDER_HPP_
 
 #include "Core.hpp"
+#include "Params.hpp"
 
 namespace gf {
 
@@ -19,37 +20,53 @@ namespace gf {
          */
         virtual void buildMesh(getfem::mesh&) const = 0;
 
-        virtual void initRegions(const getfem::mesh&, RegionMapType&) const = 0;
+        virtual void initRegions(const getfem::mesh&, RegionMapType&, BoundaryMapType&) const = 0;
 
         ~MeshBuilderStrategy() = default;
     };
 
-    
-    class GmshBuilder : public MeshBuilderStrategy {
-        std::string M_meshFile;
-
-    public:
-        GmshBuilder(const std::string& meshFile):
-        M_meshFile(meshFile){}
-
-        void buildMesh(getfem::mesh&) const override;
-
-        virtual void initRegions(const getfem::mesh&, RegionMapType&) const override;
-    };
 
     class BuiltInBuilder : public MeshBuilderStrategy {
     private:
-        GetPot M_datafile;
+        Domain M_domain; ///< Domain parameters
 
     public:
-        BuiltInBuilder(const GetPot& datafile):
-        M_datafile(datafile){}
+        BuiltInBuilder(const Domain& d):
+        M_domain(d){}
 
+        /**
+         * @brief Builds the mesh with the domain information
+         */
         void buildMesh(getfem::mesh&) const override;
 
-        virtual void initRegions(const getfem::mesh&, RegionMapType&) const override;
+        /**
+         * @brief Initializes regions for the domain and the boundary with information read from the datafile
+         * Cuts the domain at x=0, creating a Left and a Right portion of the bulk
+         */
+        virtual void initRegions(const getfem::mesh&, RegionMapType&, BoundaryMapType&) const override;
 
     };
+
+
+    class GmshBuilder : public MeshBuilderStrategy {
+        std::string M_meshFile; ///< The mesh filename
+
+    public:
+        
+        GmshBuilder(const std::string& meshFile):
+        M_meshFile(meshFile){}
+
+        /**
+         * @brief Builds the mesh reading information from the .msh file
+         */
+        void buildMesh(getfem::mesh&) const override;
+
+        /**
+         * @brief Builds the mesh regions with information provided in the .msh file
+         */
+        virtual void initRegions(const getfem::mesh&, RegionMapType&, BoundaryMapType&) const override;
+    };
+
 
 }
 

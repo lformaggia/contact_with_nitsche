@@ -1,4 +1,5 @@
 #include "Core.hpp"
+#include "MeshRegion.hpp"
 
 namespace gf{
 
@@ -6,19 +7,19 @@ namespace gf{
     class BC {
     
     protected:
-        getfem::mesh_region M_region; ///< the mesh region where to apply the BC
+        const Boundary& M_region; ///< the mesh region where to apply the BC
         VectorFunctionType M_function; ///< The function
         BCType M_BCtype; ///< Dirichlet, Neumann or Mixed
         size_type M_ID; ///< the ID of the boundary face where the BC is applied
 
     public:
 
-        BC(const getfem::mesh_region&, size_type, VectorFunctionType, BCType);
+        BC(const Boundary&, size_type, VectorFunctionType, BCType);
 
         /**
          * @brief Returns the region (read only)
          */
-        const getfem::mesh_region& getRegion() const { return M_region; };
+        const getfem::mesh_region& getRegion() const { return M_region.region(); };
 
         /**
          * @brief Return the BC type
@@ -50,7 +51,7 @@ namespace gf{
     class BCDir : public BC {
 
     public:
-        BCDir(const getfem::mesh_region& region, size_type ID, VectorFunctionType f, BCType bctype)
+        BCDir(const Boundary& region, size_type ID, VectorFunctionType f, BCType bctype)
         : BC(region, ID, f, bctype){
         }
 
@@ -63,7 +64,7 @@ namespace gf{
         bool M_isNormal;
 
     public:
-        BCNeu(const getfem::mesh_region& region, size_type ID, VectorFunctionType f, BCType bctype)
+        BCNeu(const Boundary& region, size_type ID, VectorFunctionType f, BCType bctype)
         : BC(region, ID, f, bctype){}
 
         std::string type() const override { return "Neumann"; }

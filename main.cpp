@@ -1,4 +1,5 @@
 #include "GetPot"
+#include "Mesh.hpp"
 #include "ContactProblem.hpp"
 
 int main(int argc, char * argv[]){
@@ -15,14 +16,15 @@ int main(int argc, char * argv[]){
     std::ifstream test(dataFileName);
     if(!test.is_open())
         throw std::runtime_error("Could not open the file!");
+
+    Params p(dataFileName, meshFileName, verbose);
+
+    Mesh mesh(p);
         
-    ContactProblem pb(dataFileName, meshFileName, verbose);
+    ContactProblem pb(mesh, p);
     
     pb.init();
 
-
-
-    
 
     return 0;
 

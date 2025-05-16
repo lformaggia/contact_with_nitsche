@@ -7,12 +7,14 @@
 namespace gf {
 
     struct Domain {
+        size_type dim;
         scalar_type Lx;
         scalar_type Ly;
         scalar_type Lz;
         size_type Nx;
         size_type Ny;
         size_type Nz;
+        std::string meshType;
     };
     struct Physics {
         scalar_type M_E0;
@@ -49,6 +51,7 @@ namespace gf {
     };
 
     struct Params {
+        GetPot datafile;
         Domain domain;
         Physics physics;
         It it;
@@ -58,7 +61,7 @@ namespace gf {
         Numerics numerics;
         bool verbose;
         
-        Params(const GetPot&, const std::string&, bool);
+        Params(const std::string&, const std::string&, bool);
         
     };
 

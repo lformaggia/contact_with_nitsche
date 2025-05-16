@@ -70,4 +70,10 @@ clean:
 	@$(RM) $(OBJS) $(EXECOBJS)
 
 distclean: clean
-	@$(RM) $(EXEC)
+	$(RM) $(EXEC)
+	$(RM) -f ./doc
+	$(RM) *.out *.bak *.dep *.log *~ 
+
+doc:
+	doxygen $(DOXYFILE)
+

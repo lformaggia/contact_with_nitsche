@@ -40,11 +40,19 @@ namespace gf{
         
         virtual ~MeshRegion() = default;
 
+        /**
+         * @brief Return the name of the region
+         */
         virtual std::string name() const = 0;
 
+        /**
+         * @brief Return a const& to the region
+         */
         const getfem::mesh_region& region() const { return M_region; }
-        // const const getfem::mesh& mesh() const; // via M_domain
 
+        /**
+         * @brief Return the convex indeices of the region
+         */
         const dal::bit_vector& index() const { return M_region.index(); }
     };
 
@@ -67,9 +75,6 @@ namespace gf{
         Bulk(const getfem::mesh& mesh, const getfem::mesh_region& region, SideType s)
         : MeshRegion(mesh,region), M_side(s){}
 
-        /**
-         * @brief Return the name of the region
-         */
         std::string name() const override {
             if (M_side == SideType::LEFT) return "BulkLeft";
             return "BulkRight";
@@ -117,6 +122,23 @@ namespace gf{
          * !\todo: add the following methods/members:
          * 
          */
+
+    };
+
+    class Boundary : public MeshRegion {
+        size_type M_ID;
+    public:
+        /**
+         * @brief Build the map (ID, BoundaryRegion) needed to assembly the boundary conditions
+         */
+        Boundary(const getfem::mesh& mesh, const getfem::mesh_region& region, size_type id)
+        : MeshRegion(mesh,region), M_ID(id){}
+
+        std::string name() const override {
+            std::stringstream ss;
+            ss << "Boundary" << M_ID;
+            return ss.str();
+        }
 
     };
 
