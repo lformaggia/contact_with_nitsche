@@ -1,33 +1,40 @@
 [physics]
 E = 25000                       % Young modulus
 nu = 0.3                        % Poisson ratio
-bulkLoad = [0.0,0.0,-9.81]      % gravity
+bulkLoad = [0.,0.,-0.]          % gravity
+mu_friction = 0.4               % friction coefficient
 
-regionDisp = [1,4,5]
-bdDisp1 = {sin(x[0]),x[2]+3,t}
-bdDisp2 = {sin(x[0]),x[1]^2,t*x[2]}
-bdDisp3 = {0,3,4*x[0]}
+regionDisp = [1,5]
+bdDisp1 = {0.,0.,0.}
+bdDisp2 = {0.,0.,0.}
+bdDisp3 = {0.,0.,0.}
+bdDisp4 = {0.,0.,0.}
+bdDisp5 = {0.,0.,0.}
+bdDisp6 = {0.,0.,0.}
+bdDisp7 = {0.,0.,0.}
+bdDisp8 = {0.,0.,0.}
+bdDisp9 = {0.,0.,0.}
 
-regionLoad = [7,10]
-bdLoad1 = {0,0,-2*t+x[0]*x[1]+x[2]^2}
-bdLoad2 = {0,-3,0}
+regionLoad = [7, 10]                           #[7,10]
+bdLoad1 = {0,0,-3}
+bdLoad2 = {0,3,0}
 
 [../]
 
 [domain]
-Lx = 2                          % Lenght of domain side along x
-Ly = 2                          % Lenght of domain side along y
-Lz = 2                          % Lenght of domain side along z
-Nx = 4                          % Number of subdivisions along x
-Ny = 4                          % Number of subdivisions along y
-Nz = 4                          % Number of subdivisions along z
+Lx = 1                          % Lenght of domain side along x
+Ly = 4                          % Lenght of domain side along y
+Lz = 4                          % Lenght of domain side along z
+Nx = 8                          % Number of subdivisions along x
+Ny = 8                          % Number of subdivisions along y
+Nz = 8                          % Number of subdivisions along z
 meshType = GT_QK(3,1)
 [../]
 
 [it]
 ContactToll = 1.0e-5            % tolerance for contact
-ContactMaxIt = 500              % maximum number of iteration
-theta = 0                       % +1 0 -1 Nitsche 
+ContactMaxIt = 30              % maximum number of iteration
+theta = 1                       % +1 0 -1 Nitsche 
 gamma = 10                      % Nitsche parameter
 [../]
 
@@ -38,7 +45,7 @@ dt = 0.05                       % timestep
 [../]
 
 [numerics]
-FEMTypeDisplacement = FEM_QK(3,2)
+FEMTypeDisplacement = FEM_QK(3,1)
 FEMTypeStress = FEM_QK(3,1)
 FEMTypeRhs = FEM_QK(3,1)
 FEMTypeCoeff = FEM_QK(3,0)

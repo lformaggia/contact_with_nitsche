@@ -20,7 +20,7 @@ namespace gf {
          */
         virtual void buildMesh(getfem::mesh&) const = 0;
 
-        virtual void initRegions(const getfem::mesh&, RegionMapType&, BoundaryMapType&) const = 0;
+        virtual void initRegions(getfem::mesh&) const = 0;
 
         ~MeshBuilderStrategy() = default;
     };
@@ -43,7 +43,7 @@ namespace gf {
          * @brief Initializes regions for the domain and the boundary with information read from the datafile
          * Cuts the domain at x=0, creating a Left and a Right portion of the bulk
          */
-        virtual void initRegions(const getfem::mesh&, RegionMapType&, BoundaryMapType&) const override;
+        virtual void initRegions(getfem::mesh&) const override;
 
     };
 
@@ -64,8 +64,10 @@ namespace gf {
         /**
          * @brief Builds the mesh regions with information provided in the .msh file
          */
-        virtual void initRegions(const getfem::mesh&, RegionMapType&, BoundaryMapType&) const override;
+        virtual void initRegions(getfem::mesh&) const override;
     };
+
+
 
 
 }

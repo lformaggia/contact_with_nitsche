@@ -3,6 +3,9 @@
 #include "ContactProblem.hpp"
 
 int main(int argc, char * argv[]){
+
+    GETFEM_MPI_INIT(argc, argv);
+
     using namespace gf;
 
     // parse command line options
@@ -25,6 +28,9 @@ int main(int argc, char * argv[]){
     
     pb.init();
 
+    pb.assemble();
+
+    GETFEM_MPI_FINALIZE;
 
     return 0;
 

@@ -22,6 +22,7 @@ namespace gf {
         scalar_type M_lambda;
         scalar_type M_mu;
         base_small_vector M_gravity;
+        scalar_type M_mu_friction;
     };
     struct It {
         scalar_type maxIt;

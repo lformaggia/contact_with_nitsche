@@ -23,7 +23,8 @@ namespace gf {
             datafile("physics/nu", 0.0),
             0.0, // M_lambda (computed below)
             0.0, // M_mu (computed below)
-            {}   // M_gravity (set below)
+            {},  // M_gravity (set below)
+            datafile("physics/mu_friction", 0.5)
         },
         it{
             datafile("it/ContactMaxIt", 100),

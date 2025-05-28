@@ -2,7 +2,7 @@
 MU_PARSERX_PATH = ./external/muparserx/build
 
 # Compiler
-CXX = g++
+CXX = mpicxx
 
 # Optimize flags
 OPTFLAGS = -O3
@@ -32,6 +32,7 @@ LDLIBS = /usr/local/lib/libgetfem.a
 ####### ADDED
 LDLIBS += -Wl,-rpath,/usr/lib/x86_64-linux-gnu
 LDLIBS += -L$(MU_PARSERX_PATH) -lmuparserx
+LDLIBS += -ldmumps -ldmumps_seq -lmumps_common -lblas -llapack -ldmumps -lzmumps
 
 ######## END ADDED
 
@@ -39,7 +40,7 @@ LDLIBS += -L$(MU_PARSERX_PATH) -lmuparserx
 LDLIBS += $(GETFEM_LIB) -rdynamic /usr/lib/x86_64-linux-gnu/libqhull.so.8.0 /usr/lib/x86_64-linux-gnu/liblapack.so.3 /usr/lib/x86_64-linux-gnu/libblas.so.3
 
 
-DEF_TAGS = -DHAVE_CONFIG -DGMM_USES_BLAS
+DEF_TAGS = -DHAVE_CONFIG -DGMM_USES_BLAS -DGMM_USES_MPI=1
 
 # Sources
 SRCS = $(wildcard $(FOLDER)*.cpp)
@@ -55,11 +56,12 @@ DEPEND = make.dep
 
 .PHONY: all clean
 
+
 all : $(DEPEND) $(OBJS) $(EXEOBJS)
 	$(CXX) $(OPTFLAGS) -o $(EXEC) $(EXEOBJS) $(OBJS) $(LDLIBS) $(DEF_TAGS) $(INCLUDE) 
 
-mecc :  $(DEPEND) $(OBJS) main_mecc.o
-	$(CXX) $(OPTFLAGS) -o $(EXEC) main_mecc.o $(OBJS) $(LDLIBS) $(DEF_TAGS) $(INCLUDE)
+main :  $(DEPEND) $(OBJS) main.o
+	$(CXX) $(OPTFLAGS) -o $(EXEC) main.o $(OBJS) $(LDLIBS) $(DEF_TAGS) $(INCLUDE)
 
 $(DEPEND) : $(SRCS) $(EXESRCS)
 	$(CXX) -MM $(SRCS) $(EXESRCS) -MF $(DEPEND)  $(INCLUDE) 

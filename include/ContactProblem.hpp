@@ -33,10 +33,12 @@ namespace gf{
          */
         void init();
 
-        // /**
-        //  * @brief Assemble the linear system based on the GWFL (Generic Weak Form Language)
-        //  */
-        // void assemble();
+        /**
+         * @brief Assemble the linear system based on the GWFL (Generic Weak Form Language)
+         */
+        void assemble();
+
+        void assemble(int argc, char* argv[]);
 
         // /**
         //  * @brief Solve the linear system
@@ -54,11 +56,20 @@ namespace gf{
         const Mesh& M_mesh; ///< The mesh
         BCHandler M_BC; ///< Class that stores BC information
         FEMManager M_FEM; ///< Stores the getfem::mesh_fem objects
-        getfem::mesh_im  M_integrationMethod; ///< Integration methods
+        getfem::mesh_im M_integrationMethod; ///< Integration methods
+        getfem::mesh_im M_integrationMethodSurface; ///< Integration method for 2D integrals
         getfem::im_data M_imData;
+        getfem::model M_model;
         // TimeManager M_time; ///< Struct that keeps information for evolutionary problems
         // SolType M_U; ///< Vector to store the solution 
         // StressType M_stress; ///< Vector that stores the stress information
+
+        size_type add_elasticity_brick(const varnamelist& u, size_type region = size_type(-1));
+
+        size_type add_Nitsche_KKT_brick(const varnamelist& u, const varnamelist& stress, size_type region);
+
+        size_type add_Nitsche_friction_brick(const varnamelist& u, const varnamelist& stress, size_type region);
+        
 
         /*...*/
 

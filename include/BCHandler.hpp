@@ -26,12 +26,20 @@ namespace gf {
         // VectorFunctionType buildBCFunctionFromExpressions(const std::vector<std::string>&);
 
         template <BCType T>
-        void read(const GetPot&, const BoundaryMapType&);
+        void read(const GetPot&);
 
     public:
         BCHandler(const getfem::mesh&);
 
-        void readBC(const GetPot &, const BoundaryMapType&);
+        void readBC(const GetPot &);
+
+        const std::vector<std::unique_ptr<BC>> & Neumann() const {
+            return M_BCList.at(BCType::Neumann);
+        }
+
+        const std::vector<std::unique_ptr<BC>> & Dirichlet() const {
+            return M_BCList.at(BCType::Dirichlet);
+        }
 
     /*
         std::vector<base_node> getDirichletNodes() const;

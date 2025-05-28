@@ -25,6 +25,8 @@
 #include <getfem/getfem_mesh_fem_product.h>
 #include <getfem/getfem_mesh_fem_global_function.h>
 #include <getfem/getfem_models.h>
+#include <getfem/getfem_model_solvers.h>
+#include <getfem/getfem_plasticity.h>
 
 #include "GetPot"
 #include <iostream>
@@ -39,8 +41,10 @@ namespace gf {
     /* some Getfem++ types that we will be using */
     using bgeot::scalar_type; ///< = double
     using bgeot::base_small_vector; ///< special class for small (dim < 16) vectors
+    using bgeot::base_vector;
     using bgeot::base_node; ///< geometrical nodes (derived from base_small_vector)
     using bgeot::size_type; ///< basically std::vector<scalar_type>::size_type
+    using bgeot::dim_type;
 
     using ScalarFunctionType = std::function<scalar_type(base_node,scalar_type)>; ///< f(\vector{x},t)
     using VectorFunctionType = std::function<base_small_vector(base_node, scalar_type)>; ///< \vector{f}(\vector{x},t)
@@ -51,10 +55,8 @@ namespace gf {
     using sparse_matrix = getfem::modeling_standard_sparse_matrix;
     using plain_vector = getfem::modeling_standard_plain_vector;
 
-    enum SideType{
-        LEFT,
-        RIGHT
-    };
+    using varnamelist = getfem::model::varnamelist;
+
 
     enum BCType {
         Dirichlet,
@@ -62,19 +64,19 @@ namespace gf {
         Mixed
     };
 
-    // enum RegionType {
-    //     BulkLeft,
-    //     BulkRight,
-    //     Fault
-    // };
+    enum RegionType {
+        BulkLeft = 101,
+        BulkRight = 102,
+        Fault = 100
+    };
 
 
     // forward declarations
-    class MeshRegion;
-    class Boundary;
+    // class MeshRegion;
+    // class Boundary;
 
-    using RegionMapType = std::map<std::string, std::unique_ptr<MeshRegion>>;
-    using BoundaryMapType = std::map<size_type, std::unique_ptr<Boundary>>;
+    // using RegionMapType = std::map<std::string, std::unique_ptr<MeshRegion>>;
+    // using BoundaryMapType = std::map<size_type, std::unique_ptr<Boundary>>;
 
 
 } // namespace gf

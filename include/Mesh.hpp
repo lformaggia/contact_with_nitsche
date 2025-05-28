@@ -4,28 +4,30 @@
 #include "Core.hpp"
 #include "Params.hpp"
 #include "MeshBuilder.hpp"
-#include "MeshRegion.hpp"
 #include "GetPot"
 
 namespace gf {
 
     class Mesh {
+
         const Params& M_params; ///< the Parameters
         std::unique_ptr<MeshBuilderStrategy> M_meshBuilder; ///< MeshBuilder
         getfem::mesh M_mesh; ///< The mesh
-        RegionMapType M_regions; ///< The mesh regions (BulkLeft, BulkRight, Fault)
-        BoundaryMapType M_bdRegions; /// Map (ID, BoundaryRegion)
-        
 
     public:
+        /** Constructor*/
         Mesh (const Params&);
 
+        /** @brief Return a const reference to the getfem::mesh object */
         const getfem::mesh& get() const { return M_mesh; }
 
-        const RegionMapType& getRegions() const { return M_regions; }
-
-        const BoundaryMapType& getBdRegions() const { return M_bdRegions; }
+        /** @brief Return the const region r */
+        const getfem::mesh_region region(RegionType r) const { return M_mesh.region(r); }
         
+        /** @brief Return the const boundary region i */
+        const getfem::mesh_region bdRegion(size_type i) const { return M_mesh.region(i); }
+
+        size_type dim() const { return M_mesh.dim(); }
 
     };
 

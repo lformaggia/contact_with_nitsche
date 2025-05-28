@@ -2,10 +2,10 @@
 
 namespace gf {
 
-    BC::BC(const Boundary& bdRegion, size_type regionID, VectorFunctionType func, BCType bctype)
-    : M_region(bdRegion), M_ID(regionID), M_function(func), M_BCtype(bctype)
-    {
-    }
+    // BC::BC(const getfem::mesh_region& rg, size_type regionID, VectorFunctionType func, BCType bctype)
+    // : M_region(rg), M_ID(regionID), M_function(func), M_BCtype(bctype)
+    // {
+    // }
 
     // BCNeu::BCNeu(const GetPot& datafile, bool isN)
     // : 

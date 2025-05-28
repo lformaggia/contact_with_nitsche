@@ -1,5 +1,5 @@
 #include "Core.hpp"
-#include "MeshRegion.hpp"
+#include "Mesh.hpp"
 
 namespace gf{
 
@@ -7,24 +7,27 @@ namespace gf{
     class BC {
     
     protected:
-        const Boundary& M_region; ///< the mesh region where to apply the BC
+        getfem::mesh_region M_region; ///< the mesh region where to apply the BC
         VectorFunctionType M_function; ///< The function
         BCType M_BCtype; ///< Dirichlet, Neumann or Mixed
         size_type M_ID; ///< the ID of the boundary face where the BC is applied
 
     public:
 
-        BC(const Boundary&, size_type, VectorFunctionType, BCType);
+        BC(const getfem::mesh_region& rg, size_type regionID, VectorFunctionType func, BCType bctype)
+        : M_region(rg), M_function(func), M_BCtype(bctype), M_ID(regionID) {}
 
         /**
          * @brief Returns the region (read only)
          */
-        const getfem::mesh_region& getRegion() const { return M_region.region(); };
+        const getfem::mesh_region& getRegion() const { return M_region; };
 
         /**
          * @brief Return the BC type
          */
-        virtual std::string type() const = 0;
+        virtual BCType type() const = 0;
+
+        virtual std::string name() const = 0;
 
         /**
          * @brief Returns the ID of the face where the region is applied,
@@ -42,6 +45,12 @@ namespace gf{
         base_small_vector eval(const base_node& x, scalar_type t) const {
             return M_function(x,t);
         }
+
+        VectorFunctionType& f() { return M_function; }
+        
+        bool isLeftBoundary() const {
+            return M_ID == 1 || M_ID == 2 || M_ID == 3 || M_ID == 4 || M_ID == 9;
+        }
         
     };
 
@@ -51,11 +60,12 @@ namespace gf{
     class BCDir : public BC {
 
     public:
-        BCDir(const Boundary& region, size_type ID, VectorFunctionType f, BCType bctype)
-        : BC(region, ID, f, bctype){
-        }
+        BCDir(const getfem::mesh_region& rg, size_type ID, VectorFunctionType f, BCType bctype)
+        : BC(rg, ID, f, bctype){}
 
-        std::string type() const override { return "Dirichlet"; }
+        BCType type() const override { return BCType::Dirichlet; }
+
+        std::string name() const override {return "DirichletData"+std::to_string(M_ID); }
 
     };
 
@@ -64,10 +74,12 @@ namespace gf{
         bool M_isNormal;
 
     public:
-        BCNeu(const Boundary& region, size_type ID, VectorFunctionType f, BCType bctype)
-        : BC(region, ID, f, bctype){}
+        BCNeu(const getfem::mesh_region& rg, size_type ID, VectorFunctionType f, BCType bctype)
+        : BC(rg, ID, f, bctype){}
 
-        std::string type() const override { return "Neumann"; }
+        BCType type() const override { return BCType::Neumann; }
+
+        std::string name() const override { return "NeumannData"+ std::to_string(M_ID);}
 
         bool isNormal() const { return M_isNormal; }
 
