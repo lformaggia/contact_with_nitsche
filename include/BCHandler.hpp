@@ -33,13 +33,11 @@ namespace gf {
 
         void readBC(const GetPot &);
 
-        const std::vector<std::unique_ptr<BC>> & Neumann() const {
-            return M_BCList.at(BCType::Neumann);
-        }
+        const std::vector<std::unique_ptr<BC>> & Neumann() const;
 
-        const std::vector<std::unique_ptr<BC>> & Dirichlet() const {
-            return M_BCList.at(BCType::Dirichlet);
-        }
+        const std::vector<std::unique_ptr<BC>> & Dirichlet() const;
+
+        const std::vector<std::unique_ptr<BC>> & Mixed() const;
 
     /*
         std::vector<base_node> getDirichletNodes() const;

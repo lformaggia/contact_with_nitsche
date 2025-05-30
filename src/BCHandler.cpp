@@ -1,7 +1,9 @@
 #include "BCHandler.hpp"
 #include "Utils.hpp"
 #include <sstream>
-bool DEBUGBC = false;
+#include <algorithm>
+
+bool DEBUGBC = true;
 
 namespace gf {
 
@@ -20,18 +22,16 @@ namespace gf {
     void BCHandler::read(const GetPot& datafile){
 
         std::string regionsStr;
+        std::string normalDir;
         if constexpr (T == BCType::Dirichlet) // read the regionDisp list
             regionsStr = datafile("physics/regionDisp", "");
         else if constexpr (T == BCType::Neumann) 
             regionsStr = datafile("physics/regionLoad", "");
-        else if constexpr (T == BCType::Mixed)
-            regionsStr = datafile("physics/regionMix", "");
+        else if constexpr (T == BCType::Mixed) 
+            regionsStr = datafile("physics/regionDispNormal", "");
 
         std::vector<std::size_t> regionsID = gf::toVec(regionsStr);
-        std::cout << "Region string" << regionsStr << std::endl;
-        std::cout << "ToVec result: ";
-        for (auto el: regionsID) std::cout << el << " ";
-        std::cout << std::endl;
+        std::vector<std::size_t> regionsIDnormalDisp = gf::toVec(normalDir);
 
         M_BCStrings[T].reserve(regionsID.size()); // not really needed
 
@@ -43,14 +43,14 @@ namespace gf {
             else if constexpr (T == BCType::Neumann)
                 varname << "physics/bdLoad" << (i + 1); // bdLoad1, bdLoad2, ...
             else if constexpr (T == BCType::Mixed) {
-                 /** !\todo */
+                varname << "physics/bdDispN" << (i + 1);
             }
 
             std::string stringValue = datafile(varname.str().c_str(), "");
-            std::cout << varname.str() << std::endl;
+
             if (stringValue.empty())
                 throw std::runtime_error("String Values undetected!");
-
+            
             /** @remark Alternatively to muParserX... 
              * std::vector<std::string> components = splitString(stringValue); 
              * VectorFunctionType func = buildBCFunctionFromExpressions(components);
@@ -60,51 +60,64 @@ namespace gf {
             M_parser.set_expression(stringValue);
             M_BCStrings[T].emplace_back(stringValue);
 
+            /** \todo: check if n is needed (eventually change BC constructor) */
+            getfem::mr_visitor it(M_mesh.region(regionsID[i]));
+            base_small_vector n = M_mesh.mean_normal_of_face_of_convex(it.cv(), it.f());
+
             if constexpr (T == BCType::Dirichlet) { // build BCDir and add to M_BCList
                 // Build the BCDir object bc
-                auto bc = std::make_unique<BCDir>(M_mesh.region(regionsID[i]), regionsID[i], M_parser, T);
+                auto bc = std::make_unique<BCDir>(M_mesh.region(regionsID[i]), regionsID[i], M_parser, T, n);
                 // Add to map
                 M_BCList[T].emplace_back(std::move(bc));
             }
 
             else if constexpr (T == BCType::Neumann) {
                 // Build the BCNeu object bc
-                auto bc = std::make_unique<BCNeu>(M_mesh.region(regionsID[i]), regionsID[i], M_parser, T);
+                auto bc = std::make_unique<BCNeu>(M_mesh.region(regionsID[i]), regionsID[i], M_parser, T, n);
                 // Add to map
                 M_BCList[T].emplace_back(std::move(bc));
             }
 
-            // else if constexpr (T == BCType::Mixed) { /** !\todo */
-            //     // Build the BCMixed object bc
-            //     auto bc = std::make_unique<BCMix>(bds.at(regionsID[i]), regionsID[i], std::move(func) /** !\todo */);
-            //     // Add to map
-            //     M_BCList[BCType::Mixed].emplace_back(std::move(bc));
-            // }
+            else if constexpr (T == BCType::Mixed) { /** !\todo */
+                // Build the BCMixed object bc
+                auto bc = std::make_unique<BCMix>(M_mesh.region(regionsID[i]), regionsID[i], M_parser, T, n);
+                // Add to map
+                M_BCList[BCType::Mixed].emplace_back(std::move(bc));
+            }
+
+            if (DEBUGBC)
+            if constexpr(T==BCType::Dirichlet)
+            std::clog << "DEBUG: evaluating bdDisp" << i <<" at ((1,2,3),100): ("
+            << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[0] << ", "
+            << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[1] << ", "
+            << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[2]
+            << ")" << std::endl;
 
         }
 
-        if (DEBUGBC)
-            if constexpr(T==BCType::Dirichlet)
-            std::clog << "DEBUG: evaluating bdDisp" <<" at ((1,2,3),100): ("
-            << M_BCList[BCType::Dirichlet][1]->eval({1,2,3},100)[0] << ", "
-            << M_BCList[BCType::Dirichlet][1]->eval({1,2,3},100)[1] << ", "
-            << M_BCList[BCType::Dirichlet][1]->eval({1,2,3},100)[2]
-            << ")" << std::endl;
+    }
 
-        // THIS WILL GO INTO THE ASSEMBLY PHASE
-        // gmm::resize(RM, mf.nb_dof(), mf.nb_dof());
-        // gmm::resize(B, mf.nb_dof());
-        // std::vector<double> F(mf.nb_basic_dof() * mf.get_qdim());
+    const std::vector<std::unique_ptr<BC>> & 
+    BCHandler::Neumann() const {
+        static const std::vector<std::unique_ptr<BC>> empty;
+        auto it = M_BCList.find(BCType::Neumann);
+        return (it != M_BCList.end()) ? it->second : empty;
+        // return M_BCList.at(BCType::Neumann);
+    }
 
-        // // Set Dirichlet values on boundary
-        // for (auto it = mf.basic_dof_on_region(boundary).begin();
-        //     it != mf.basic_dof_on_region(boundary).end(); ++it) {
-        //     for (size_type q = 0; q < mf.get_qdim(); ++q)
-        //         F[*it * mf.get_qdim() + q] = 0.0; // Zero Dirichlet BC
-        // }
+    const std::vector<std::unique_ptr<BC>> &
+    BCHandler::Dirichlet() const {
+        static const std::vector<std::unique_ptr<BC>> empty;
+        auto it = M_BCList.find(BCType::Dirichlet);
+        return (it != M_BCList.end()) ? it->second : empty;
+        // return M_BCList.at(BCType::Dirichlet);
+    }
 
-        // assembling_Dirichlet_condition(RM, B, mf, boundary, F);
-
+    const std::vector<std::unique_ptr<BC>> & 
+    BCHandler::Mixed() const {
+        static const std::vector<std::unique_ptr<BC>> empty;
+        auto it = M_BCList.find(BCType::Mixed);
+        return (it != M_BCList.end()) ? it->second : empty;
     }
 
 } // namespace gf

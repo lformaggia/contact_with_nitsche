@@ -126,7 +126,6 @@ namespace gf {
 
         
         // Create the boundary regions
-
         getfem::mesh_region borderFaces;
         getfem::outer_faces_of_mesh(mesh, borderFaces);
 

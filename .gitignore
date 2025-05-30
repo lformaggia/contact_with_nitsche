@@ -1,4 +1,5 @@
 /external/
 /*.o
 /./src/*.o/
+*.vtk
 main

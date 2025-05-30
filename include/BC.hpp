@@ -11,11 +11,14 @@ namespace gf{
         VectorFunctionType M_function; ///< The function
         BCType M_BCtype; ///< Dirichlet, Neumann or Mixed
         size_type M_ID; ///< the ID of the boundary face where the BC is applied
+        base_small_vector M_normal;
 
     public:
 
-        BC(const getfem::mesh_region& rg, size_type regionID, VectorFunctionType func, BCType bctype)
-        : M_region(rg), M_function(func), M_BCtype(bctype), M_ID(regionID) {}
+        BC(const getfem::mesh_region& rg, size_type regionID,
+            VectorFunctionType func, BCType bctype, base_small_vector n)
+        : M_region(rg), M_function(func), M_BCtype(bctype), M_ID(regionID), M_normal(n){
+        }
 
         /**
          * @brief Returns the region (read only)
@@ -35,6 +38,8 @@ namespace gf{
          */
         size_type ID() const { return M_ID; }
 
+        base_small_vector normal() const { return M_normal; }
+        
         virtual ~BC() = default;
 
         /**
@@ -60,8 +65,9 @@ namespace gf{
     class BCDir : public BC {
 
     public:
-        BCDir(const getfem::mesh_region& rg, size_type ID, VectorFunctionType f, BCType bctype)
-        : BC(rg, ID, f, bctype){}
+        BCDir(const getfem::mesh_region& rg, size_type ID, VectorFunctionType f, BCType bctype, base_small_vector n)
+        : BC(rg, ID, f, bctype, n){
+        }
 
         BCType type() const override { return BCType::Dirichlet; }
 
@@ -71,17 +77,25 @@ namespace gf{
 
     class BCNeu : public BC {
 
-        bool M_isNormal;
-
     public:
-        BCNeu(const getfem::mesh_region& rg, size_type ID, VectorFunctionType f, BCType bctype)
-        : BC(rg, ID, f, bctype){}
+        BCNeu(const getfem::mesh_region& rg, size_type ID, VectorFunctionType f, BCType bctype, base_small_vector n)
+        : BC(rg, ID, f, bctype, n){}
 
         BCType type() const override { return BCType::Neumann; }
 
         std::string name() const override { return "NeumannData"+ std::to_string(M_ID);}
 
-        bool isNormal() const { return M_isNormal; }
+    };
+
+
+    class BCMix : public BC {
+    public:
+        BCMix(const getfem::mesh_region& rg, size_type ID, VectorFunctionType f, BCType bctype, base_small_vector n)
+        : BC(rg, ID, f, bctype, n){}
+
+        BCType type() const override { return BCType::Mixed; }
+
+        std::string name() const override { return "MixedData"+ std::to_string(M_ID);}
 
     };
 

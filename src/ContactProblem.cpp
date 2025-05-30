@@ -39,7 +39,7 @@ namespace gf{
     ContactProblem::assemble()
     {
         
-        gmm::set_traces_level(3);
+        gmm::set_traces_level(1);
 
         dim_type dim = M_mesh.get().dim();
         size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
@@ -56,8 +56,8 @@ namespace gf{
         M_model.add_initialized_scalar_data("mu", M_params.physics.M_mu);
         M_model.add_initialized_scalar_data("gammaN", 10*M_params.physics.M_E0/h);
         M_model.add_initialized_scalar_data("theta", M_params.nitsche.theta);  // symmetric variant
+        M_model.add_initialized_scalar_data("mu_fric", M_params.physics.M_mu_friction);
 
-        std::cout << "DEBUG: theta = " << M_params.nitsche.theta << std::endl;
 
         // Add isotropic elasticity bricks
         getfem::add_isotropic_linearized_elasticity_brick(
@@ -68,18 +68,55 @@ namespace gf{
        
 
         // Define some useful macro for Nitsche contact integrals
+        M_model.add_initialized_scalar_data("eps", 1.e-20);
         M_model.add_macro("n", "Normal"); // use normal on contact face
+        /** \todo: add macros for t1, t2 */
+        // Choose auxiliary vector `a` robustly
+M_model.add_macro("eps_dir", "1e-4"); // to avoid numerical degeneracies
+M_model.add_macro("a", "[0, 1, 0]");
 
-        M_model.add_macro("un_jump", "(uL - Interpolate(uR,neighbor_element)) . n"); // scalar jump
-        M_model.add_macro("vn_jump", "(Test_uL - Interpolate(Test_uR,neighbor_element)) . n"); // scalar test jump
+// Project a onto plane orthogonal to n
+M_model.add_macro("t1_raw", "a - (a . n) * n");
+M_model.add_macro("t1", "Normalized(t1_raw)");
+
+// Cross to get the second tangent
+M_model.add_macro("t2", "Cross_product(n, t1)");
+
+        // Define macros for jump
+        M_model.add_macro("u_jump", "(uL - Interpolate(uR,neighbor_element))");
+        M_model.add_macro("v_jump", "(Test_uL - Interpolate(Test_uR,neighbor_element))");
+        M_model.add_macro("un_jump", "u_jump . n"); // normal trial jump
+        M_model.add_macro("ut1_jump", "u_jump . t1");
+        M_model.add_macro("ut2_jump", "u_jump . t2");
+        M_model.add_macro("vn_jump", "v_jump . n"); // normal test jump
+        M_model.add_macro("vt1_jump", "v_jump . t1");
+        M_model.add_macro("vt2_jump", "v_jump . t2");
+
+        M_model.add_macro("traction_u", "((lambda*Trace(Grad_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_uL)) * n)");
+        M_model.add_macro("traction_v", "((lambda*Trace(Grad_Test_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_Test_uL)) * n)");
+        M_model.add_macro("sig_u_nL", "traction_u . n");
+        M_model.add_macro("sig_u_t1", "traction_u . t1");
+        M_model.add_macro("sig_u_t2", "traction_u . t2");
+        M_model.add_macro("sig_v_nL", "traction_v . n");
+        M_model.add_macro("sig_v_t1", "traction_v . t1");
+        M_model.add_macro("sig_v_t2", "traction_v . t2");
+
+        // Normal gap and stress
+        M_model.add_macro("Pn_u", "(gammaN * un_jump - sig_u_nL)");
+        M_model.add_macro("Pt1_u", "(gammaN * ut1_jump - sig_u_t1)");
+        M_model.add_macro("Pt2_u", "(gammaN * ut2_jump - sig_u_t2)");
+        M_model.add_macro("Pn_v_theta", "(gammaN * vn_jump - theta*sig_v_nL)");
+        M_model.add_macro("Pt1_v_theta", "(gammaN * vt1_jump - theta*sig_v_t1)");
+        M_model.add_macro("Pt2_v_theta", "(gammaN * vt2_jump - theta*sig_v_t2)");
         
-        M_model.add_macro("sig_u_nL", "((lambda*Trace(Grad_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_uL)) * n) . n");
-        M_model.add_macro("sig_u_nR", "((lambda*Trace(Interpolate(Grad_uR,neighbor_element))*Id(qdim(uR)) + 2*mu*Sym(Interpolate(Grad_uR,neighbor_element))) * n) . n");
-        M_model.add_macro("sig_u_n_jump", "(sig_u_nL - sig_u_nR)");
+        // Friction threshold
+        M_model.add_macro("Sh", "mu_fric * pos_part(Pn_u)");
+        M_model.add_macro("norm_Pt", "sqrt(Pt1_u*Pt1_u + Pt2_u*Pt2_u)");
+        M_model.add_macro("proj_Pt1_u", "Pt1_u * min(1, Sh / (norm_Pt + eps))");
+        M_model.add_macro("proj_Pt2_u", "Pt2_u * min(1, Sh / (norm_Pt + eps))");
 
-        M_model.add_macro("sig_v_nL", "((lambda*Trace(Grad_Test_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_Test_uL)) * n) . n");
-        M_model.add_macro("sig_v_nR", "((lambda*Trace(Interpolate(Grad_Test_uR,neighbor_element))*Id(qdim(uR)) + 2*mu*Sym(Interpolate(Grad_Test_uR,neighbor_element))) * n) . n");
-        M_model.add_macro("sig_v_n_jump", "(sig_v_nL - sig_v_nR)");
+        std::cout << "Added macros." << std::endl;
+
 
         // Add linear stress brick
         getfem::add_linear_term(
@@ -98,14 +135,24 @@ namespace gf{
         getfem::add_nonlinear_term(
             M_model,
             M_integrationMethod,
-            "1/gammaN * pos_part(gammaN*un_jump - sig_u_nL) * (gammaN*vn_jump - theta*sig_v_nL)",
+            "1/gammaN * pos_part(Pn_u) * Pn_v_theta",
             Fault,
             false,
             false,
             "KKTbrick"
         );
 
-        M_model.add_initialized_scalar_data("eps", 1.e-20);
+        // Add Coulomb condition brick
+        getfem::add_nonlinear_term(
+            M_model,
+            M_integrationMethod,
+            "(1/gammaN) * (proj_Pt1_u * Pt1_v_theta + proj_Pt2_u * Pt2_v_theta)",
+            Fault,
+            false,
+            false,
+            "CoulombBrick"
+        );
+
 
         getfem::add_nonlinear_term(
             M_model,
@@ -157,8 +204,10 @@ namespace gf{
         // Dirichlet conditions
         const auto & DirichletBCs = M_BC.Dirichlet();
         plain_vector D(nb_dof_rhs*dim);
+        std::cout << "DirichletBCs.size(): " << DirichletBCs.size() << std::endl;
 
         for (const auto& bc: DirichletBCs){
+
             std::cout << "Assembling Dirichlet on boundary " << bc->ID() << std::endl;
 
             const auto& rg = bc->getRegion();
@@ -180,8 +229,34 @@ namespace gf{
                      bc->name());
         }
 
+        // Mixed conditions (normal Dirichlet)
+        const auto & MixedBCs = M_BC.Mixed();
+        plain_vector M(nb_dof_rhs);
 
-        // Solve the problem
+        for (const auto& bc: MixedBCs){
+            const auto& rg = bc->getRegion();
+            auto& f = bc->f();
+
+            auto f0 = [&f](const base_node&x){ return f(x, 0); };
+            getfem::interpolation_function(M_FEM.mf_rhs(), M, f0, rg);
+
+            M_model.add_initialized_fem_data(bc->name(), M_FEM.mf_rhs(),M);
+
+            if (bc->isLeftBoundary())
+                // getfem::add_normal_Dirichlet_condition_with_penalization
+                //     (M_model, M_integrationMethod, "uL", 1e-5, bc->ID(), bc->name());
+                getfem::add_normal_Dirichlet_condition_with_multipliers
+                    (M_model, M_integrationMethod, "uL", M_FEM.mf_rhs(), bc->ID(), bc->name());
+            else
+                // getfem::add_normal_Dirichlet_condition_with_penalization
+                //     (M_model, M_integrationMethod, "uR", 1e-5, bc->ID(), bc->name());
+                getfem::add_normal_Dirichlet_condition_with_multipliers
+                    (M_model, M_integrationMethod, "uR", M_FEM.mf_rhs(), bc->ID(), bc->name());
+            
+        }
+
+
+        // Solve the problems
         gmm::iteration iter(M_params.it.atol, 1, M_params.it.maxIt);
         getfem::standard_solve(M_model,iter);
 
@@ -191,89 +266,6 @@ namespace gf{
         exp.write_mesh();
         exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
         exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
-
-    }
-
-       void ContactProblem::assemble(int argc, char* argv[]){
-        dim_type dim = M_mesh.get().dim();
-        size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
-        getfem::mesh_fem mf_u(M_mesh.get());
-        mf_u.set_qdim(dim);
-        mf_u.set_finite_element(getfem::fem_descriptor("FEM_QK(3,1)"));
-
-        M_model.add_fem_variable("u", mf_u);
-
-        M_model.add_initialized_scalar_data("lambda", M_params.physics.M_lambda);
-        M_model.add_initialized_scalar_data("mu", M_params.physics.M_mu);
-
-        getfem::add_isotropic_linearized_elasticity_brick(
-            M_model, M_integrationMethod, "u", "lambda", "mu");
-
-        std::cout << "Added isotropic linear elasticity brick!" << std::endl;
-
-        // Volumic source term (gravity)
-        // plain_vector G(M_FEM.mf_rhs().nb_dof()*dim);
-        // std::cout << M_FEM.mf_rhs().nb_dof() << std::endl;
-
-        // for (size_type i = 0; i < nb_dof_rhs; ++i)
-        //     gmm::copy(M_params.physics.M_gravity, gmm::sub_vector(G, gmm::sub_interval(i*dim, dim)));
-
-        // M_model.add_initialized_fem_data("VolumicData", M_FEM.mf_rhs(), G);
-        // getfem::add_source_term_brick(M_model, M_integrationMethod, "u", "VolumicData");
-
-        // // Neumann conditions
-        // const auto & NeumannBCs = M_BC.Neumann();
-        // plain_vector F(nb_dof_rhs*dim);
-        // for (const auto& bc: NeumannBCs){
-        //     const auto& rg = bc->getRegion();
-        //     auto& f = bc->f();
-        //     // just for debug
-        //     auto f0 = [&f](const base_node&x){ return f(x, 0); };
-        //     getfem::interpolation_function(M_FEM.mf_rhs(),F,f0, rg);
-        //     M_model.add_initialized_fem_data(bc->name(), M_FEM.mf_rhs(),F);
-
-        //     getfem::add_source_term_brick(M_model, M_integrationMethod,"u",bc->name(),bc->ID());
-
-        // }
-
-        // Dirichlet conditions
-        const auto & DirichletBCs = M_BC.Dirichlet();
-        plain_vector D(nb_dof_rhs*dim);
-
-        for (const auto& bc: DirichletBCs){
-            const auto& rg = bc->getRegion();
-            auto& f = bc->f();
-            // just for debug
-            auto f0 = [&f](const base_node&x){ return f(x, 0); };
-            getfem::interpolation_function(M_FEM.mf_rhs(),D,f0, rg);
-            M_model.add_initialized_fem_data(bc->name(), M_FEM.mf_rhs(),D);
-
-            getfem::add_Dirichlet_condition_with_multipliers
-                (M_model, M_integrationMethod, "u", mf_u, bc->ID(), 
-                    bc->name());
-        }
-
-
-        // Solve the problem
-        gmm::iteration iter(M_params.it.atol, 1, M_params.it.maxIt);
-        getfem::standard_solve(M_model,iter);
-
-        // // Set Dirichlet values on boundary
-        // for (auto it = mf.basic_dof_on_region(boundary).begin();
-        //     it != mf.basic_dof_on_region(boundary).end(); ++it) {
-        //     for (size_type q = 0; q < mf.get_qdim(); ++q)
-        //         F[*it * mf.get_qdim() + q] = 0.0; // Zero Dirichlet BC
-        // }
-
-        // assembling_Dirichlet_condition(RM, B, mf, boundary, F);
-
-        // getfem::add_source_term_brick(M_model, M_integrationMethod, "u", "VolumicData");
-
-
-        getfem::vtk_export exp("result.vtk");
-        exp.exporting(mf_u);
-        exp.write_mesh();
-        exp.write_point_data(mf_u, M_model.real_variable("u"), "u");
 
     }
 

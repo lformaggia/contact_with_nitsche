@@ -1,6 +1,6 @@
 [physics]
 E = 25000                       % Young modulus
-nu = 0.3                        % Poisson ratio
+nu = 0.25                       % Poisson ratio
 bulkLoad = [0.,0.,-0.]          % gravity
 mu_friction = 0.4               % friction coefficient
 
@@ -15,9 +15,14 @@ bdDisp7 = {0.,0.,0.}
 bdDisp8 = {0.,0.,0.}
 bdDisp9 = {0.,0.,0.}
 
-regionLoad = [7, 10]                           #[7,10]
-bdLoad1 = {0,0,-3}
-bdLoad2 = {0,3,0}
+regionDispNormal = [9]
+bdDispN1 = 0.
+bdDispN2 = 0.
+bdDispN3 = 0.
+
+regionLoad = [7,10]                           # [7,10]
+bdLoad1 = {0,0,-5}
+bdLoad2 = {-2,0,0}
 
 [../]
 
@@ -25,7 +30,7 @@ bdLoad2 = {0,3,0}
 Lx = 1                          % Lenght of domain side along x
 Ly = 4                          % Lenght of domain side along y
 Lz = 4                          % Lenght of domain side along z
-Nx = 8                          % Number of subdivisions along x
+Nx = 4                          % Number of subdivisions along x
 Ny = 8                          % Number of subdivisions along y
 Nz = 8                          % Number of subdivisions along z
 meshType = GT_QK(3,1)
@@ -33,7 +38,7 @@ meshType = GT_QK(3,1)
 
 [it]
 ContactToll = 1.0e-5            % tolerance for contact
-ContactMaxIt = 30              % maximum number of iteration
+ContactMaxIt = 30               % maximum number of iteration
 theta = 1                       % +1 0 -1 Nitsche 
 gamma = 10                      % Nitsche parameter
 [../]
