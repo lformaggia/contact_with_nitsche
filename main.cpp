@@ -30,6 +30,8 @@ int main(int argc, char * argv[]){
 
     pb.assemble();
 
+    pb.solve();
+
     GETFEM_MPI_FINALIZE;
 
     return 0;

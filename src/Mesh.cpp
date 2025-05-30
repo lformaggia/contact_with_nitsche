@@ -1,6 +1,6 @@
 #include "Mesh.hpp"
 
-bool DEBUG = true;
+bool DEBUG = false;
 
 namespace gf {
 

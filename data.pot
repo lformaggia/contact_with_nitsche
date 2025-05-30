@@ -21,7 +21,7 @@ bdDispN2 = 0.
 bdDispN3 = 0.
 
 regionLoad = [7,10]                           # [7,10]
-bdLoad1 = {0,0,-5}
+bdLoad1 = {0,0,-5*t/5}
 bdLoad2 = {-2,0,0}
 
 [../]
@@ -37,16 +37,16 @@ meshType = GT_QK(3,1)
 [../]
 
 [it]
-ContactToll = 1.0e-5            % tolerance for contact
-ContactMaxIt = 30               % maximum number of iteration
+tol = 1.0e-14            % tolerance for contact
+maxit = 30               % maximum number of iteration
 theta = 1                       % +1 0 -1 Nitsche 
 gamma = 10                      % Nitsche parameter
 [../]
 
 [time]
 t0 = 0.0                        % starting time
-tend = 0.5                      % ending time
-dt = 0.05                       % timestep
+tend = 10                      % ending time
+dt = 0.5                       % timestep
 [../]
 
 [numerics]

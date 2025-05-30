@@ -3,7 +3,7 @@
 #include <sstream>
 #include <algorithm>
 
-bool DEBUGBC = true;
+bool DEBUGBC = false;
 
 namespace gf {
 
@@ -86,12 +86,12 @@ namespace gf {
             }
 
             if (DEBUGBC)
-            if constexpr(T==BCType::Dirichlet)
-            std::clog << "DEBUG: evaluating bdDisp" << i <<" at ((1,2,3),100): ("
-            << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[0] << ", "
-            << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[1] << ", "
-            << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[2]
-            << ")" << std::endl;
+                if constexpr(T==BCType::Dirichlet)
+                std::clog << "DEBUG: evaluating bdDisp" << i <<" at ((1,2,3),100): ("
+                << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[0] << ", "
+                << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[1] << ", "
+                << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[2]
+                << ")" << std::endl;
 
         }
 

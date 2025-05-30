@@ -28,59 +28,52 @@ namespace gf{
         size_type N = M_params.domain.dim;
         M_integrationMethod.set_integration_method(M_mesh.get().convex_index(), ppi);
         M_imData.set_tensor_size(bgeot::multi_index(N,N)); /** \todo */
-
-        // getfem::pintegration_method ppiSurf = getfem::int_method_descriptor("IM_QUAD(5)");
-        // M_integrationMethodSurface.set_integration_method(M_mesh.region(Fault).index(), ppiSurf);
-
+        
     }
 
 
     void
     ContactProblem::assemble()
     {
-        
+        std::cout << "Preparing the assembly phase:\n";
         gmm::set_traces_level(1);
-
+        
         dim_type dim = M_mesh.get().dim();
         size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
 
         // Main unknown of the problem (displacement)
+        std::cout << "  Defining variables...";
         M_model.add_fem_variable("uL", M_FEM.mf_u1());
         M_model.add_fem_variable("uR", M_FEM.mf_u2());
+        std::cout << "done.\n";
 
         // Add scalar data to the model
         /** \todo Change using the function element_size() from getfem */
         scalar_type h = M_params.domain.Lx / M_params.domain.Nx;  // typical mesh size
 
+        std::cout << "  Initializing scalar data...";
         M_model.add_initialized_scalar_data("lambda", M_params.physics.M_lambda);
         M_model.add_initialized_scalar_data("mu", M_params.physics.M_mu);
         M_model.add_initialized_scalar_data("gammaN", 10*M_params.physics.M_E0/h);
         M_model.add_initialized_scalar_data("theta", M_params.nitsche.theta);  // symmetric variant
         M_model.add_initialized_scalar_data("mu_fric", M_params.physics.M_mu_friction);
-
-
-        // Add isotropic elasticity bricks
-        getfem::add_isotropic_linearized_elasticity_brick(
-            M_model, M_integrationMethod, "uL", "lambda", "mu", RegionType::BulkLeft);
-        getfem::add_isotropic_linearized_elasticity_brick(
-            M_model, M_integrationMethod, "uR", "lambda", "mu", RegionType::BulkRight);
-        std::cout << "Added elasticity bricks." << std::endl;
+        std::cout << "done.\n";
        
-
+        std::cout << "  Defining macros...";
         // Define some useful macro for Nitsche contact integrals
         M_model.add_initialized_scalar_data("eps", 1.e-20);
         M_model.add_macro("n", "Normal"); // use normal on contact face
         /** \todo: add macros for t1, t2 */
         // Choose auxiliary vector `a` robustly
-M_model.add_macro("eps_dir", "1e-4"); // to avoid numerical degeneracies
-M_model.add_macro("a", "[0, 1, 0]");
+        M_model.add_macro("eps_dir", "1e-4"); // to avoid numerical degeneracies
+        M_model.add_macro("a", "[0, 1, 0]");
 
-// Project a onto plane orthogonal to n
-M_model.add_macro("t1_raw", "a - (a . n) * n");
-M_model.add_macro("t1", "Normalized(t1_raw)");
+        // Project a onto plane orthogonal to n
+        M_model.add_macro("t1_raw", "a - (a . n) * n");
+        M_model.add_macro("t1", "Normalized(t1_raw)");
 
-// Cross to get the second tangent
-M_model.add_macro("t2", "Cross_product(n, t1)");
+        // Cross to get the second tangent
+        M_model.add_macro("t2", "Cross_product(n, t1)");
 
         // Define macros for jump
         M_model.add_macro("u_jump", "(uL - Interpolate(uR,neighbor_element))");
@@ -115,10 +108,18 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
         M_model.add_macro("proj_Pt1_u", "Pt1_u * min(1, Sh / (norm_Pt + eps))");
         M_model.add_macro("proj_Pt2_u", "Pt2_u * min(1, Sh / (norm_Pt + eps))");
 
-        std::cout << "Added macros." << std::endl;
+        std::cout << "done.\n";
 
+        // Add isotropic elasticity bricks
+        std::cout << "  Adding elasticity bricks...";
+        getfem::add_isotropic_linearized_elasticity_brick(
+            M_model, M_integrationMethod, "uL", "lambda", "mu", RegionType::BulkLeft);
+        getfem::add_isotropic_linearized_elasticity_brick(
+            M_model, M_integrationMethod, "uR", "lambda", "mu", RegionType::BulkRight);
+        std::cout << "done.\n";
 
         // Add linear stress brick
+        std::cout << "  Adding linear stress brick...";
         getfem::add_linear_term(
             M_model,
             M_integrationMethod,
@@ -129,9 +130,11 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
             "linear_stress",
             false /** check */
         );
+        std::cout << "done.\n";
 
 
         // Add KKT condition brick
+        std::cout << "  Adding KKT condition brick...";
         getfem::add_nonlinear_term(
             M_model,
             M_integrationMethod,
@@ -141,8 +144,10 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
             false,
             "KKTbrick"
         );
+        std::cout << "done.\n";
 
         // Add Coulomb condition brick
+        std::cout << "  Adding Coulomb friction brick";
         getfem::add_nonlinear_term(
             M_model,
             M_integrationMethod,
@@ -152,6 +157,7 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
             false,
             "CoulombBrick"
         );
+        std::cout << "done.\n";
 
 
         getfem::add_nonlinear_term(
@@ -175,6 +181,7 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
 
         
         // Volumic source term (gravity)
+        std::cout << "  Adding volumic source term brick...";
         plain_vector G(M_FEM.mf_rhs().nb_dof()*dim);
 
         for (size_type i = 0; i < nb_dof_rhs; ++i)
@@ -183,8 +190,10 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
         M_model.add_initialized_fem_data("VolumicData", M_FEM.mf_rhs(), G);
         getfem::add_source_term_brick(M_model, M_integrationMethod, "uL", "VolumicData", BulkLeft);
         getfem::add_source_term_brick(M_model, M_integrationMethod, "uR", "VolumicData", BulkRight);
+        std::cout << "done.\n";
 
         // Neumann conditions
+        std::cout << "  Adding Neumann condition bricks...";
         const auto & NeumannBCs = M_BC.Neumann();
         plain_vector F(nb_dof_rhs*dim);
         for (const auto& bc: NeumannBCs){
@@ -200,16 +209,14 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
             else
                 getfem::add_source_term_brick(M_model, M_integrationMethod,"uR",bc->name(),bc->ID());
         }
+        std::cout << "done.\n";
 
         // Dirichlet conditions
+        std::cout << "  Adding Dirichlet condition bricks...";
         const auto & DirichletBCs = M_BC.Dirichlet();
         plain_vector D(nb_dof_rhs*dim);
-        std::cout << "DirichletBCs.size(): " << DirichletBCs.size() << std::endl;
 
         for (const auto& bc: DirichletBCs){
-
-            std::cout << "Assembling Dirichlet on boundary " << bc->ID() << std::endl;
-
             const auto& rg = bc->getRegion();
             auto& f = bc->f();
             // take time 0
@@ -228,8 +235,10 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
                     (M_model, M_integrationMethod, "uR", M_FEM.mf_u2(), bc->ID(), 
                      bc->name());
         }
+        std::cout << "done.\n";
 
         // Mixed conditions (normal Dirichlet)
+        std::cout << "  Adding normal Dirichlet condition bricks...";
         const auto & MixedBCs = M_BC.Mixed();
         plain_vector M(nb_dof_rhs);
 
@@ -251,21 +260,57 @@ M_model.add_macro("t2", "Cross_product(n, t1)");
                 // getfem::add_normal_Dirichlet_condition_with_penalization
                 //     (M_model, M_integrationMethod, "uR", 1e-5, bc->ID(), bc->name());
                 getfem::add_normal_Dirichlet_condition_with_multipliers
-                    (M_model, M_integrationMethod, "uR", M_FEM.mf_rhs(), bc->ID(), bc->name());
+                    (M_model, M_integrationMethod, "uR", M_FEM.mf_rhs(), bc->ID(), bc->name());  
+        }
+        std::cout << "done.\n";
+
+    }
+
+    void
+    ContactProblem::solve() {
+
+        std::cout << "Solving the problem..." << std::endl;
+
+        const auto & NeumannBCs = M_BC.Neumann();
+        gmm::set_traces_level(1);
+        
+        dim_type dim = M_mesh.get().dim();
+        size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
+        plain_vector F(nb_dof_rhs*dim);
+
+        // Time loop
+        size_type n_timesteps = static_cast<size_type>(M_params.time.tend - M_params.time.t0)/M_params.time.dt;
+        
+        scalar_type t {};
+
+        for (size_type i{}; i < n_timesteps; ++i)
+        {
+            std::cout << "t = " << t << std::endl;
+            // Neumann conditions
+            for (const auto& bc: NeumannBCs){
+                const auto& rg = bc->getRegion();
+                auto& f = bc->f();
+                // just for debug
+                auto ft = [&f,t](const base_node&x){ return f(x, t); };
+                getfem::interpolation_function(M_FEM.mf_rhs(),F,ft, rg);
+                gmm::copy(F, M_model.set_real_variable(bc->name()));
+            }
             
+            // Solve the problem
+            gmm::iteration iter(M_params.it.atol, 1, M_params.it.maxIt);
+            getfem::standard_solve(M_model,iter);
+
+            // Export results
+            getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
+            exp.exporting(M_FEM.mf_u1());
+            exp.write_mesh();
+            exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
+            exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
+
+            // Advance in time
+            t += M_params.time.dt;
         }
 
-
-        // Solve the problems
-        gmm::iteration iter(M_params.it.atol, 1, M_params.it.maxIt);
-        getfem::standard_solve(M_model,iter);
-
-        // Export results
-        getfem::vtk_export exp("result.vtk");
-        exp.exporting(M_FEM.mf_u1());
-        exp.write_mesh();
-        exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
-        exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
 
     }
 

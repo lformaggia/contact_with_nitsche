@@ -27,8 +27,8 @@ namespace gf {
             datafile("physics/mu_friction", 0.5)
         },
         it{
-            datafile("it/ContactMaxIt", 100),
-            datafile("it/ContactToll", 1e-6),
+            datafile("it/maxit", 100),
+            datafile("it/tol", 1e-6),
             0.0 // atol: not in file, default to 0
         },
         nitsche{

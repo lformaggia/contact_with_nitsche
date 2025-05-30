@@ -40,10 +40,10 @@ namespace gf{
 
         void assemble(int argc, char* argv[]);
 
-        // /**
-        //  * @brief Solve the linear system
-        //  */
-        // void solve();
+        /**
+         * @brief Solve the linear system
+         */
+        void solve();
 
         // /**
         //  * @brief Export vtk results for visualization
