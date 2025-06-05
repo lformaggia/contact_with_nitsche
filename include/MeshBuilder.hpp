@@ -10,19 +10,37 @@ namespace gf {
     class MeshRegion;
 
     /**
-     * Builder class for building the mesh
+     * @brief Builder class for building the mesh
+     * In the Mesh class constructor, the MeshBuilderStrategy::construct() method
+     * is called. Depending on the command line argument passed, it either builds
+     * the mesh internally or imports it from gmsh
      */
     class MeshBuilderStrategy{
     public:
+
+        /**
+         * @brief Construct the mesh by building it and initializing regions.
+         * This is the entry point for all mesh creation logic.
+         */
+        void construct(getfem::mesh&) const;
+
+        virtual ~MeshBuilderStrategy() = default;
+
+    protected:
+
         /**
          * @brief Null method to build the mesh, overridden in the hierarchy
          * They get a reference to the mesh object, modifying it
          */
         virtual void buildMesh(getfem::mesh&) const = 0;
 
+        /**
+         * @brief Initializes the region
+         * The method does nothing by default, and it's overridden by the
+         * built-in builder only
+         */
         virtual void initRegions(getfem::mesh&) const = 0;
 
-        ~MeshBuilderStrategy() = default;
     };
 
 
@@ -62,9 +80,10 @@ namespace gf {
         void buildMesh(getfem::mesh&) const override;
 
         /**
-         * @brief Builds the mesh regions with information provided in the .msh file
+         * @brief Post-process the fault regions automatically imported
          */
         virtual void initRegions(getfem::mesh&) const override;
+
     };
 
 

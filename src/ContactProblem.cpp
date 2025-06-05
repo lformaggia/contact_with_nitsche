@@ -22,13 +22,12 @@ namespace gf{
         M_BC.readBC(M_params.datafile);
 
         M_FEM.setMeshFem(M_params.datafile, M_mesh.get());
-        
 
         getfem::pintegration_method ppi = getfem::int_method_descriptor(M_params.numerics.integration);
         size_type N = M_params.domain.dim;
         M_integrationMethod.set_integration_method(M_mesh.get().convex_index(), ppi);
         M_imData.set_tensor_size(bgeot::multi_index(N,N)); /** \todo */
-        
+
     }
 
 
@@ -301,220 +300,181 @@ namespace gf{
             getfem::standard_solve(M_model,iter);
 
             // Export results
-            getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
-            exp.exporting(M_FEM.mf_u1());
-            exp.write_mesh();
-            exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
-            exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
+            exportVtk(i);
 
             // Advance in time
             t += M_params.time.dt;
         }
 
-
     }
 
+    
+    void ContactProblem::exportVtk(size_type i) {
 
-} // namespace gf
+        dim_type dim = M_mesh.get().dim();
 
-        // const size_type Nb_t = 19;
-        // std::vector<scalar_type> T(19);
-        // T[0] = 0; T[1] = 0.9032; T[2] = 1; T[3] = 1.1; T[4] = 1.3;
-        // T[5] = 1.5; T[6] = 1.7; T[7] = 1.74; T[8] = 1.7; T[9] = 1.5;
-        // T[10] = 1.3; T[11] = 1.1; T[12] = 1; T[13] = 0.9032; T[14] = 0.7;
-        // T[15] = 0.5; T[16] = 0.3; T[17] = 0.1; T[18] = 0;
+        // const plain_vector& uL = M_model.real_variable("uL");
+        // const plain_vector& uR = M_model.real_variable("uR");
 
+        // dal::bit_vector dofsL = M_FEM.mf_u1().basic_dof_on_region(BulkLeft);
+        // dal::bit_vector dofsR = M_FEM.mf_u2().basic_dof_on_region(BulkRight);
+        // dal::bit_vector dofsF = M_FEM.mf_u1().basic_dof_on_region(Fault);
 
-        // for (size_type nb = 0; nb < Nb_t; ++nb) {
-        //     cout << "=============iteration number : " << nb << "==========" << endl;
+        // size_type nb_dof_L = dofsL.card();
+        // size_type nb_dof_R = dofsR.card();
+        // size_type nb_dof_F = dofsF.card();
+        // size_type nb_dof = M_FEM.mf_u1().nb_dof();
+        // size_type nb_dof_tot = nb_dof_L+nb_dof_R; // == nb_dof + nb_dof_L
+
+        // // for (dal::bv_visitor bv(dofsL); !bv.finished();++bv) std::cout << bv << " ";
+        // // std::cout << std::endl;
         
-        //     scalar_type t = T[nb];
-            
-        //     // Defining the Neumann condition right hand side.
-        //     base_small_vector v(dim);
-        //     v[dim-1] = -2.0;
-        //     gmm::scale(v,t);
-            
-        //     for (size_type i = 0; i < nb_dof_rhs; ++i)
-        //     gmm::copy(v, gmm::sub_vector
-        //         (F, gmm::sub_interval(i*dim, dim)));
-            
-        //     gmm::copy(F, M_model.set_real_variable("NeumannData"));
-            
-        //     // Generic solve.
-        //     cout << "Number of variables : " 
-        //     << M_model.nb_dof() << endl;
-            
-        //     getfem::newton_search_with_step_control ls;
-        //     // getfem::simplest_newton_line_search ls;
-        //     gmm::iteration iter(residual, 2, 40000);
-        //     getfem::standard_solve(M_model, iter,
-        //         getfem::rselect_linear_solver(M_model, "superlu"), ls);
-        
-            
-            
-        //     // Get the solution and save it
-        //     gmm::copy(M_model.real_variable("u"), U);
-            
-            
-        //     std::stringstream fname; fname << datafilename << "_" << nb << ".vtk";
+        // // Compute the actual intersection of Left and Right
+        // dal::bit_vector intersection = dofsL & dofsR;
 
-        //     if (do_export) {
-        //         getfem::vtk_export exp(fname.str());
-        //         exp.write_point_data(M_FEM.mf_U1(), U, "displacement");
+        // // std::cout << "\nDofsF: " << std::endl;
+        // // for (dal::bv_visitor bv(dofsF); !bv.finished();++bv) std::cout << bv << " ";
+
+
+        // plain_vector U;
+        // U.reserve(nb_dof_tot);
+        // std::vector<base_node> dof_coords;
+        // dof_coords.reserve(nb_dof_tot);
+
+        // // Map original dof index to new index in U
+        // std::map<size_type, size_type> dof_map;
+        // std::map<size_type, size_type> dof_to_point;
+
+        // // Insert uL values
+        // for (dal::bv_visitor ii(dofsL); !ii.finished(); ++ii) {
+        //     size_type dof = ii;
+        //     if (dof % dim == 0) {  // only once per node
+        //         base_node pt = M_FEM.mf_u1().point_of_basic_dof(dof);
+        //         pt[0] -= 1e-16;
+        //         dof_coords.push_back(pt);
+        //         size_type pt_idx = dof_coords.size() - 1;
+        //         dof_to_point[dof] = pt_idx;
         //     }
-            
+        //     U.push_back(uL[dof]);
+        // }
+
+        // // Insert uR values
+        // for (dal::bv_visitor jj(dofsR); !jj.finished(); ++jj) {
+        //     size_type dof = jj;
+        //     if (dof % dim == 0) {  // only once per node
+        //         base_node pt = M_FEM.mf_u2().point_of_basic_dof(dof);
+        //         pt[0] += 1e-16;
+        //         dof_coords.push_back(pt);
+        //         size_type pt_idx = dof_coords.size() - 1;
+        //         dof_to_point[dof] = pt_idx;
+        //     }
+        //     U.push_back(uL[dof]);
         // }
 
 
-        
+        // std::vector<base_small_vector> U_vector;
+        // U_vector.reserve(U.size() / dim);
 
-        // if (contact_flag){
-        //     // Add the Nitsche contact brick with raytracing
-        //     size_type brick_id = getfem::add_Nitsche_large_sliding_contact_brick_raytracing(
-        //         M_model,
-        //         true,                   // unbiased
-        //         "gamma_contact",        // Nitsche parameter
-        //         1e-6,                   // release distance
-        //         "mu_friction",          // friction coefficient
-        //         "alpha",                // alpha
-        //         false,                  // symmetric version
-        //         false                   // frame indifferent
-        //     );
+        // for (size_type i = 0; i < U.size(); i += dim) {
+        //     base_small_vector vec(dim);
+        //     for (size_type d = 0; d < dim; ++d)
+        //         vec[d] = U[i + d];
+        //     U_vector.emplace_back(vec);
+        // }
 
-        //     // Add contact boundaries (using both master and slave sides for unbiased)
-        //     getfem::add_contact_boundary_to_Nitsche_large_sliding_contact_brick(
-        //         M_model, brick_id, M_integrationMethod,
-        //         M_mesh.getRegions().at("Fault")->ID(),
-        //         false, true, true, "uL"
-        //     );
-        //     getfem::add_contact_boundary_to_Nitsche_large_sliding_contact_brick(
-        //         M_model, brick_id, M_integrationMethod,
-        //         M_mesh.getRegions().at("Fault")->ID(),
-        //         true, false, true, "uR"
-        //     );
-        // }    
+        // assert(U_vector.size() == dof_coords.size());
 
-        // // // Non-penetrability KKT condition brick
-        // // M_model.add_initialized_scalar_data("theta", M_params.nitsche.theta);
-        // // M_model.add_initialized_scalar_data("gamma0", M_params.nitsche.gamma0);
+        // // Build connectivity matrix
+        // std::vector<std::vector<size_type>> connectivity;
 
-        // // add_Nitsche_KKT_brick("u", /* faultRegionID */);
+        // for (dal::bv_visitor cv(M_mesh.get().convex_index()); !cv.finished(); ++cv) {
+        //     auto dofs = M_FEM.mf_u1().ind_basic_dof_of_element(cv);
+        //     std::vector<size_type> cell;
 
-        // // // Coulomb friction condition brick
-        // // add_Nitsche_friction_brick("u", /* faultRegionID */);
+        //     for (size_type d = 0; d < dofs.size(); d += dim) {
+        //         size_type dof_id = dofs[d]; // one per point
+        //         auto it = dof_to_point.find(dof_id);
+        //         if (it != dof_to_point.end()) {
+        //             cell.push_back(it->second);
+        //         } else {
+        //             std::cerr << "DOF " << dof_id << " not found in dof_to_point!\n";
+        //         }
+        //     }
 
-    
+        //     if ((dim == 3 && (cell.size() == 4 || cell.size() == 8)) ||
+        //         (dim == 2 && (cell.size() == 3 || cell.size() == 4))) {
+        //         connectivity.push_back(cell);
+        //     }
+        // }
 
-        // // // Dirichlet condition 
-        // // /** \todo */
+        // // Export to vtk (custom)
+        // std::string filename = "result_" + std::to_string(i) + ".vtk";
 
+        // std::ofstream out(filename);
+        // if (!out) {
+        //     std::cerr << "Cannot open file " << filename << " for writing.\n";
+        //     return;
+        // }
 
+        // out << "# vtk DataFile Version 3.0\n";
+        // out << "Custom GetFEM Export\n";
+        // out << "ASCII\n";
+        // out << "DATASET UNSTRUCTURED_GRID\n";
 
-
-        // M_model.add_fem_data("stressL", M_FEM.mf_stress1());
-        // M_model.add_fem_data("stressR", M_FEM.mf_stress2());
-        // M_model.add_fem_data("stressL0", M_FEM.mf_stress1());
-        // M_model.add_fem_data("stressR0", M_FEM.mf_stress2());
-        // /** \todo: add other fem data */
-
-
-
-
-
-        // size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
-        // size_type N = M_mesh.dim();
-
-        // Displacement: 0 is for the previous solution
-        /**
-         * \todo: alternatively, try to build a unique mesh_fem allover the mesh
-         *    model.add_filtered_fem_variable("uL", M_FEM.mf_u(), BulkLeft.getRegion());
-         */
+        // out << "POINTS " << dof_coords.size() << " float\n";
+        // for (const auto& pt : dof_coords) {
+        //     for (size_t d = 0; d < dim; ++d)
+        //         out << pt[d] << " ";
+        //     out << "\n";
+        // }
 
 
+        // size_t num_cells = connectivity.size();
+        // size_t total_ints = 0;
+        // for (const auto& c : connectivity)
+        //     total_ints += (1 + c.size()); // size prefix + indices
 
-        // model.add_im_data("Previous_Ep", mim_data);
+        // out << "CELLS " << num_cells << " " << total_ints << "\n";
+        // for (const auto& c : connectivity) {
+        //     out << c.size();
+        //     for (auto idx : c)
+        //         out << " " << idx;
+        //     out << "\n";
+        // }
 
-        /* choose the projection type */
-        // getfem::pconstraints_projection
-        //     proj = std::make_shared<getfem::VM_projection>(0);
+        // out << "CELL_TYPES " << num_cells << "\n";
+        // for (const auto& c : connectivity) {
+        //     int vtk_type = -1;
+        //     if (c.size() == 3) vtk_type = 5;        // triangle
+        //     else if (c.size() == 4) vtk_type = 10;  // tetrahedron
+        //     else if (c.size() == 8) vtk_type = 12;  // hexahedron
+        //     else if (c.size() == 6) vtk_type = 13;  // wedge (prism), optional
+        //     else if (c.size() == 5) vtk_type = 14;  // pyramid, optional
+        //     else throw std::runtime_error("Unsupported element type with " + std::to_string(c.size()) + " points.");
+        //     out << vtk_type << "\n";
+        // }
 
-        // std::vector<std::string> plastic_variables = {"u", "xi", "Previous_Ep"};
-        // std::vector<std::string> plastic_data = {"lambda", "mu", "sigma_y"};
-        
+        // out << "POINT_DATA " << U_vector.size() << "\n";
+        // out << "VECTORS U float\n";
+        // for (const auto& v : U_vector) {
+        //     for (size_t d = 0; d < dim; ++d)
+        //         out << v[d] << " ";
+        //     out << "\n";
+        // }
 
-        // add_small_strain_elastoplasticity_brick
-        //     (model, mim, "Prandtl Reuss", getfem::DISPLACEMENT_ONLY,
-        //     plastic_variables, plastic_data);
-        
-        // plain_vector F(nb_dof_rhs * N);
-        // model.add_initialized_fem_data("NeumannData", M_FEM.mf_rhs(), F);
+        // std::cout << "VTK file written to: " << filename << "\n";
 
+        // getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
+        // exp.exporting(M_FEM.mf_u1());
+        // exp.write_mesh();
+        // exp.write_point_data(M_FEM.mf_u1(), U, "u");
 
-        // getfem::add_source_term_brick
-        //     (model, mim, "u", "NeumannData", NEUMANN_BOUNDARY_NUM);
-        
-        // model.add_initialized_fem_data("DirichletData", mf_rhs, F);
-        // getfem::add_Dirichlet_condition_with_multipliers
-        //     (model, mim, "u", mf_u, DIRICHLET_BOUNDARY_NUM, 
-        //     "DirichletData");
+        getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
+        exp.exporting(M_FEM.mf_u1());
+        exp.write_mesh();
+        exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
+        exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
 
-        // const size_type Nb_t = 19;
-        // std::vector<scalar_type> T(19);
-        // T[0] = 0; T[1] = 0.9032; T[2] = 1; T[3] = 1.1; T[4] = 1.3;
-        // T[5] = 1.5; T[6] = 1.7; T[7] = 1.74; T[8] = 1.7; T[9] = 1.5;
-        // T[10] = 1.3; T[11] = 1.1; T[12] = 1; T[13] = 0.9032; T[14] = 0.7;
-        // T[15] = 0.5; T[16] = 0.3; T[17] = 0.1; T[18] = 0;
+    }
 
-
-        // getfem::mesh_fem mf_vm(mesh);
-        // mf_vm.set_classical_discontinuous_finite_element(1);
-        // getfem::base_vector VM(mf_vm.nb_dof());
-        // getfem::base_vector plast(mf_vm.nb_dof());
-        
-        // for (size_type nb = 0; nb < Nb_t; ++nb) {
-        //     cout << "=============iteration number : " << nb << "==========" << endl;
-        
-        //     scalar_type t = T[nb];
-            
-        //     // Defining the Neumann condition right hand side.
-        //     base_small_vector v(N);
-        //     v[N-1] = -PARAM.real_value("FORCE");
-        //     gmm::scale(v,t); 
-            
-        //     for (size_type i = 0; i < nb_dof_rhs; ++i)
-        //     gmm::copy(v, gmm::sub_vector
-        //         (F, gmm::sub_interval(i*N, N)));
-            
-        //     gmm::copy(F, model.set_real_variable("NeumannData"));
-            
-        //     // Generic solve.
-        //     cout << "Number of variables : " 
-        //     << model.nb_dof() << endl;
-
-
-
-    // size_type
-    // ContactProblem::add_Nitsche_KKT_brick(const varnamelist& u, const varnamelist& stress, size_type region)
-    // {
-    //     getfem::pbrick pbr = std::make_shared<my_KKT_Nitsche_brick>();
-    //     getfem::model::termlist tl;
-    //     tl.push_back(getfem::model::term_description(u[0], u[1], false));
-
-    //     return M_model.add_brick(pbr, u, stress, tl,
-    //                              getfem::model::mimlist(1, &M_integrationMethod),
-    //                              region);
-    // }
-
-    // size_type
-    // ContactProblem::add_Nitsche_friction_brick(const varnamelist& u, const varnamelist& stress, size_type region)
-    // {
-    //     getfem::pbrick pbr = std::make_shared<my_friction_Nitsche_brick>();
-    //     getfem::model::termlist tl;
-    //     tl.push_back(getfem::model::term_description(u[0], u[1], false));
-
-    //     return M_model.add_brick(pbr, u, stress, tl,
-    //                              getfem::model::mimlist(1, &M_integrationMethod),
-    //                              region);
-    // }
-
+} // namespace gf

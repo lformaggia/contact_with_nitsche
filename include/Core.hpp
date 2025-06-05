@@ -65,62 +65,22 @@ namespace gf {
     };
 
     enum RegionType {
-        BulkLeft = 101,
-        BulkRight = 102,
-        Fault = 100
+        // BottomLeft = 1,
+        // YmaxLeft = 2,
+        // TopLeft = 3,
+        // YminLeft = 4,
+        // BottomRight = 5,
+        // YmaxRight = 6,
+        // TopRight = 7,
+        // YminRight = 8,
+        // Xmin = 9,
+        // Xmax = 10,
+        BulkLeft = 11,
+        BulkRight = 12,
+        Fault = 13
     };
-
-
-    // forward declarations
-    // class MeshRegion;
-    // class Boundary;
-
-    // using RegionMapType = std::map<std::string, std::unique_ptr<MeshRegion>>;
-    // using BoundaryMapType = std::map<size_type, std::unique_ptr<Boundary>>;
-
 
 } // namespace gf
 
 #endif // _CORE_HPP_
 
-
-    /* definition of some matrix/vector types. These ones are built
-    using the predefined types in Gmm++ */
-
-    // using sparseVector_Type = gmm::rsvector<scalar_type>;  // sparse std::vector optimized for read operations
-
-    // typedef gmm::row_matrix<sparseVector_Type> sparseMatrix_Type;  // row_matrix
-    // typedef boost::shared_ptr<sparseMatrix_Type> sparseMatrixPtr_Type;  // ptr to a row-matrix
-    // typedef std::vector<sparseMatrix_Type> sparseMatrixContainer_Type;  // vector of row_matrices
-    // typedef std::vector<sparseMatrixPtr_Type> sparseMatrixPtrContainer_Type;  // vector of ptrs to row-matrix
-
-    // typedef std::vector<scalar_type> scalarVector_Type;  // std::vector
-    // typedef boost::shared_ptr<scalarVector_Type> scalarVectorPtr_Type;  // ptr to std::vector
-    // typedef std::vector<scalarVector_Type> scalarVectorContainer_Type;  // std::vector of std::vectors
-    // typedef boost::shared_ptr<scalarVectorPtr_Type> scalarVectorContainerPtr_Type; // ptr to ptr to std::vector
-    // typedef std::vector<scalarVectorPtr_Type> scalarVectorPtrContainer_Type;  // vectir of ptrs to vector
-
-    // typedef std::vector<size_type> sizeVector_Type;  // size_type
-    // typedef boost::shared_ptr<sizeVector_Type> sizeVectorPtr_Type;  // ptr to size_type
-    // typedef std::vector<sizeVector_Type> sizeVectorContainer_Type;  // vector of size_type
-    // typedef std::vector<sizeVectorPtr_Type> sizeVectorPtrContainer_Type;  // vector of ptr
-
-    // typedef std::pair<size_type, size_type> pairSize_Type;
-    // typedef std::vector<pairSize_Type > pairSizeVector_Type;
-    // typedef std::vector<pairSizeVector_Type> pairSizeVectorContainer_Type;
-
-    // typedef std::vector < std::string > stringContainer_Type;
-
-    // typedef boost::shared_ptr<getfem::mesh> GFMeshFEMPtr_Type;
-    // typedef std::vector<GFMeshFEMPtr_Type> GFMeshFEMPtrContainer_Type;
-
-    // namespace LifeV{
-    // typedef scalar_type Double;
-    // typedef size_type UInt;
-    // typedef size_type ID;
-    // typedef int Int;
-    // }
-    // enum ElementDimension
-    // {
-    //     MEDIUM = 3, FRACTURE = MEDIUM-2
-    // };

@@ -60,18 +60,11 @@ namespace gf{
         getfem::mesh_im M_integrationMethodSurface; ///< Integration method for 2D integrals
         getfem::im_data M_imData;
         getfem::model M_model;
-        // TimeManager M_time; ///< Struct that keeps information for evolutionary problems
         // SolType M_U; ///< Vector to store the solution 
         // StressType M_stress; ///< Vector that stores the stress information
 
-        size_type add_elasticity_brick(const varnamelist& u, size_type region = size_type(-1));
+        void exportVtk(size_type i);
 
-        size_type add_Nitsche_KKT_brick(const varnamelist& u, const varnamelist& stress, size_type region);
-
-        size_type add_Nitsche_friction_brick(const varnamelist& u, const varnamelist& stress, size_type region);
-        
-
-        /*...*/
 
     };
 

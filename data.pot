@@ -1,3 +1,19 @@
+[domain]
+gmsh = true                     % choose mesh builder strategy
+Lx = 1                          % Lenght of domain side along x
+Ly = 4                          % Lenght of domain side along y
+Lz = 4                          % Lenght of domain side along z
+
+% RMK: The following has to be consistent with the [numerics] parameters
+meshType = GT_QK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK(3,1) for tetrahedron
+gmsh = false
+
+Nx = 6                          % Number of subdivisions along x
+Ny = 8                          % Number of subdivisions along y
+Nz = 8                          % Number of subdivisions along z
+
+[../]
+
 [physics]
 E = 25000                       % Young modulus
 nu = 0.25                       % Poisson ratio
@@ -26,19 +42,9 @@ bdLoad2 = {-2,0,0}
 
 [../]
 
-[domain]
-Lx = 1                          % Lenght of domain side along x
-Ly = 4                          % Lenght of domain side along y
-Lz = 4                          % Lenght of domain side along z
-Nx = 4                          % Number of subdivisions along x
-Ny = 8                          % Number of subdivisions along y
-Nz = 8                          % Number of subdivisions along z
-meshType = GT_QK(3,1)
-[../]
-
 [it]
 tol = 1.0e-14            % tolerance for contact
-maxit = 30               % maximum number of iteration
+maxit = 10               % maximum number of iteration
 theta = 1                       % +1 0 -1 Nitsche 
 gamma = 10                      % Nitsche parameter
 [../]
@@ -54,4 +60,4 @@ FEMTypeDisplacement = FEM_QK(3,1)
 FEMTypeStress = FEM_QK(3,1)
 FEMTypeRhs = FEM_QK(3,1)
 FEMTypeCoeff = FEM_QK(3,0)
-integration = IM_HEXAHEDRON(5)
+integration = IM_HEXAHEDRON(5) %IM_TETRAHEDRON(5) IM_HEXAHEDRON(5)

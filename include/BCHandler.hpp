@@ -39,14 +39,6 @@ namespace gf {
 
         const std::vector<std::unique_ptr<BC>> & Mixed() const;
 
-    /*
-        std::vector<base_node> getDirichletNodes() const;
-        std::vector<base_node> getNeumannNodes() const;
-        std::vector<base_node> getMixedNodes() const;
-        std::vector<size_type> getDirichletRegions() const;
-        std::vector<size_type> getNeumannRegions() const;
-        std::vector<size_type> getMixedRegions() const;
-    */
     };
 
 } // namespace gf

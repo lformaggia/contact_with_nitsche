@@ -3,7 +3,19 @@
 bool DEBUGIR = true;
 namespace gf {
 
-    void BuiltInBuilder::buildMesh(getfem::mesh& mesh) const
+    void
+    MeshBuilderStrategy::construct(getfem::mesh& mesh) const
+    {
+        std::cout << "Building the mesh internally... ";
+        buildMesh(mesh);
+        std::cout << "done.\n";
+        std::cout << "Initializing regions... ";
+        initRegions(mesh);
+        std::cout << "done." << std::endl;
+    }
+
+    void
+    BuiltInBuilder::buildMesh(getfem::mesh& mesh) const
     {
 
         size_type N = M_domain.dim;
@@ -211,48 +223,36 @@ namespace gf {
     }
 
 
-    // GmshBuilder:: IMPLEMENTATION 
-    /** \todo */
+    // GmshBuilder:: IMPLEMENTATION
     void
     GmshBuilder::buildMesh(getfem::mesh& mesh) const
     {
-        mesh.read_from_file(M_meshFile);
+        using RegMap = std::map<std::string, size_type>;
+        RegMap regmap;
+        getfem::import_mesh_gmsh(M_meshFile, mesh, regmap);
+
+        std::cout << regmap.size() << "\n";
+        for (RegMap::iterator i = regmap.begin(); i != regmap.end(); i++) {
+            std::cout << i->first << " " << i->second << "\n";
+        }
     }
 
-
-    /** \todo */
     void
     GmshBuilder::initRegions(getfem::mesh& mesh) const
     {
-        // std::map<std::string, size_type> regionMap;
-        // // getfem::import_mesh_gmsh(M_meshFile, mesh, regionMap);
+        getfem::mesh_region &fault_region = mesh.region(Fault);
+        const getfem::mesh_region &bulk_region = mesh.region(BulkRight);
 
-        // /** \todo ... */
-    
-        // auto itLeft = regionMap.find("BulkLeft");
-        // auto itRight = regionMap.find("BulkRight");
-        // auto itFault = regionMap.find("Fault");
-    
-        // if (itLeft != regionMap.end()) {
-        //     auto view = std::make_unique<Bulk>(mesh, itLeft->second, SideType::LEFT);
-        //     mesh.region(101).add(view->index());
-        //     // regions["BulkLeft"] = std::move(view);
-        // }
-    
-        // if (itRight != regionMap.end()) {
-        //     auto view = std::make_unique<Bulk>(mesh, itRight->second, SideType::RIGHT);
-        //     mesh.region(102).add(view->index());
-        //     regions["BulkRight"] = std::move(view);
-        // }
-    
-        // if (itFault != regionMap.end()) {
-        //     auto view = std::make_unique<Fault>(mesh, itFault->second);
-        //     mesh.region(100).add(view->index());
-        //     regions["Fault"] = std::move(view);
-        // }
-
-
+        // Loop through (convex, face) pairs
+        std::clog << "Faces in region Fault (convex, face): ";
+        for (getfem::mr_visitor it(fault_region); !it.finished(); ++it) {
+            if (bulk_region.is_in(it.cv())){
+                std::cout << "Removing (" << it.cv() << "," << it.f() << ")...";
+                fault_region.sup(it.cv(),it.f());
+            }
+            std::cout << "done." << std::endl;
+        }
 
     }
 
-}
+} // namespace gf

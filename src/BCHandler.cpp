@@ -51,19 +51,17 @@ namespace gf {
             if (stringValue.empty())
                 throw std::runtime_error("String Values undetected!");
             
-            /** @remark Alternatively to muParserX... 
-             * std::vector<std::string> components = splitString(stringValue); 
-             * VectorFunctionType func = buildBCFunctionFromExpressions(components);
-            */
-
-            // Use muparser (alternative to buildBCFunctionFromExpressions)
+            // Use muparser
             M_parser.set_expression(stringValue);
             M_BCStrings[T].emplace_back(stringValue);
 
-            /** \todo: check if n is needed (eventually change BC constructor) */
+
             getfem::mr_visitor it(M_mesh.region(regionsID[i]));
             base_small_vector n = M_mesh.mean_normal_of_face_of_convex(it.cv(), it.f());
 
+            std::cout << "Normal of region " << regionsID[i] << ": ["
+                << n[0] << ", " << n[1] << ", " << n[2] << "]" << std::endl;
+                
             if constexpr (T == BCType::Dirichlet) { // build BCDir and add to M_BCList
                 // Build the BCDir object bc
                 auto bc = std::make_unique<BCDir>(M_mesh.region(regionsID[i]), regionsID[i], M_parser, T, n);

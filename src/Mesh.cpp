@@ -1,6 +1,6 @@
 #include "Mesh.hpp"
 
-bool DEBUG = false;
+bool DEBUG = true;
 
 namespace gf {
 
@@ -10,61 +10,40 @@ namespace gf {
         if (DEBUG)
             std::clog << "============= MESH INFORMATION =============\n";
 
-        if (M_params.meshFile.empty()){
+        if (M_params.meshFile.empty())
             M_meshBuilder = std::make_unique<BuiltInBuilder>(M_params.domain);
-            if (p.verbose)
-                std::clog << "Building the mesh internally... ";
-        }
-        else {
+        else
             M_meshBuilder = std::make_unique<GmshBuilder>(M_params.meshFile);
-            if (p.verbose)
-                std::clog << "Reading the mesh from " << M_params.meshFile << "... ";
-        }
         
-        M_meshBuilder->buildMesh(M_mesh);
-
-        if (M_params.verbose)
-            std::clog << "done." << std::endl;
+        M_meshBuilder->construct(M_mesh);
             
-        ////////////////////////
         if (DEBUG){
-            M_mesh.write_to_file(std::clog);
             std::clog << "\n\n============= REGION INFORMATION =============" << std::endl;
-        }
-        ////////////////////////
+            // M_mesh.write_to_file(std::cout);
 
-            
-        if (M_params.verbose)
-            std::clog << "Creating bulk, fault and boundary regions... ";
+            // // Check boundary regions
+            // {
+            //     std::clog << std::endl;
+            //     for (size_type i = 1; i < 11; ++i) {
+            //         const getfem::mesh_region& region = M_mesh.region(i);
 
-        M_meshBuilder->initRegions(M_mesh);
+            //         std::clog << "Boundary region " << i << " has " << region.size() << " elements" << std::endl;
+            //         std::clog << "Number of convexes in region: " << region.nb_convex() << std::endl;
+            //         std::clog << "Region contains only faces: " << region.is_only_faces() << std::endl;
+            //         std::clog << "Region contains only convexes: " << region.is_only_convexes() << std::endl;
 
-        if (M_params.verbose)
-            std::clog << "done." << std::endl;
-
-            
-        ////////////////////////
-        if (DEBUG){
-            std::clog << std::endl;
-            for (size_type i = 1; i < 11; ++i) {
-                const getfem::mesh_region& region = M_mesh.region(i);
-
-                std::clog << "Boundary region " << i << " has " << region.size() << " elements" << std::endl;
-                std::clog << "Number of convexes in region: " << region.nb_convex() << std::endl;
-                std::clog << "Region contains only faces: " << region.is_only_faces() << std::endl;
-                std::clog << "Region contains only convexes: " << region.is_only_convexes() << std::endl;
-
-                std::clog << "Elements in region " << i << ": ";
-                for (getfem::mr_visitor it(region); !it.finished(); ++it) {
-                    std::clog << "(" << it.cv() << ", " << it.f() << ") ";
-                }
-                std::clog << std::endl << std::endl;
-            }
+            //         std::clog << "Elements in region " << i << ": ";
+            //         for (getfem::mr_visitor it(region); !it.finished(); ++it) {
+            //             std::clog << "(" << it.cv() << ", " << it.f() << ") ";
+            //         }
+            //         std::clog << std::endl << std::endl;
+            //     }
+            // }
 
             // Check BulkLeft
             {
                 const auto& region = M_mesh.region(BulkLeft);
-                std::clog << "Boundary region BulkLeft has " << region.size() << " elements" << std::endl;
+                std::clog << "BULKLEFT REGION has " << region.size() << " elements" << std::endl;
                 std::clog << "Number of convexes in region: " << region.nb_convex() << std::endl;
                 std::clog << "Region contains only faces: " << region.is_only_faces() << std::endl;
                 std::clog << "Region contains only convexes: " << region.is_only_convexes() << std::endl;
@@ -79,7 +58,7 @@ namespace gf {
             // Check BulkRight
             {
                 const auto& region = M_mesh.region(BulkRight);
-                std::clog << "Boundary region BulkRight has " << region.size() << " elements" << std::endl;
+                std::clog << "BULKRIGHT REGION has " << region.size() << " elements" << std::endl;
                 std::clog << "Number of convexes in region: " << region.nb_convex() << std::endl;
                 std::clog << "Region contains only faces: " << region.is_only_faces() << std::endl;
                 std::clog << "Region contains only convexes: " << region.is_only_convexes() << std::endl;
@@ -91,20 +70,21 @@ namespace gf {
                 std::clog << std::endl << std::endl;
             }
 
+            // Check Fault Region
+            {
+                const getfem::mesh_region &fault_region = M_mesh.region(Fault);
+                std::clog << "FAULT REGION has " << fault_region.size() << " elements" << std::endl;
+                std::clog << "Number of convexes in region: " << fault_region.nb_convex() << std::endl;
+                std::clog << "Region contains only faces: " << fault_region.is_only_faces() << std::endl;
+                std::clog << "Region contains only convexes: " << fault_region.is_only_convexes() << std::endl;
 
-            const getfem::mesh_region &fault_region = M_mesh.region(Fault);
-            std::clog << "Boundary region Fault has " << fault_region.size() << " elements" << std::endl;
-            std::clog << "Number of convexes in region: " << fault_region.nb_convex() << std::endl;
-            std::clog << "Region contains only faces: " << fault_region.is_only_faces() << std::endl;
-            std::clog << "Region contains only convexes: " << fault_region.is_only_convexes() << std::endl;
-
-            // Loop through (convex, face) pairs
-            std::clog << "Faces in region Fault (convex, face): ";
-            for (getfem::mr_visitor it(fault_region); !it.finished(); ++it) {
-                std::clog << "(" << it.cv() << ", " << it.f() << ") ";
-            }
-            std::clog << std::endl;
-            
+                // Loop through (convex, face) pairs
+                std::clog << "Faces in region Fault (convex, face): ";
+                for (getfem::mr_visitor it(fault_region); !it.finished(); ++it) {
+                    std::clog << "(" << it.cv() << ", " << it.f() << ") ";
+                }
+                std::clog << std::endl;
+            }            
         }
 
         
