@@ -74,7 +74,7 @@ clean:
 distclean: clean
 	$(RM) $(EXEC)
 	$(RM) -f ./doc
-	$(RM) *.out *.bak *.dep *.log *~ 
+	$(RM) *.out *.bak *.dep *.log *~ fractured_mesh.* *.vtk
 
 doc:
 	doxygen $(DOXYFILE)

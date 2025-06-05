@@ -14,6 +14,8 @@ namespace gf {
         size_type Nx;
         size_type Ny;
         size_type Nz;
+        scalar_type h;
+        scalar_type angle;
         std::string meshType;
     };
     struct Physics {
@@ -35,12 +37,12 @@ namespace gf {
     struct Nitsche {
         scalar_type theta;
         scalar_type gamma0;
-        /** \todo:
-         * add tolerances for Nitsche
-         */
     };
     struct Numerics {
         std::string integration;
+        std::string FEMTypeDisplacement;
+        std::string FEMTypeStress;
+        std::string FEMTypeRhs;
     }; 
     struct Time {
         scalar_type t0;
@@ -58,11 +60,11 @@ namespace gf {
         It it;
         Nitsche nitsche;
         Time time;
-        std::string meshFile;
         Numerics numerics;
-        bool verbose;
+        bool verbose = false;
+        bool gmsh = false;
         
-        Params(const std::string&, const std::string&, bool);
+        Params(int argc, char* argv[]);
         
     };
 

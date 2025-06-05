@@ -18,15 +18,17 @@ namespace gf{
     void
     ContactProblem::init()
     {
+        // std::cout << "Inside ConstactProblem::init()" << std::endl;
+        // std::cout << M_params.numerics.FEMTypeRhs << std::endl;
 
         M_BC.readBC(M_params.datafile);
 
-        M_FEM.setMeshFem(M_params.datafile, M_mesh.get());
+        M_FEM.setMeshFem(M_params.numerics, M_mesh.get());
 
         getfem::pintegration_method ppi = getfem::int_method_descriptor(M_params.numerics.integration);
         size_type N = M_params.domain.dim;
         M_integrationMethod.set_integration_method(M_mesh.get().convex_index(), ppi);
-        M_imData.set_tensor_size(bgeot::multi_index(N,N)); /** \todo */
+        // M_imData.set_tensor_size(bgeot::multi_index(N,N)); /** \todo */
 
     }
 

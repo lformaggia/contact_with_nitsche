@@ -19,6 +19,12 @@ namespace gf {
     public:
 
         /**
+         * @brief Constructor taking the domain parameters
+         */
+        MeshBuilderStrategy(const Domain& d)
+        : M_domain(d) {}
+
+        /**
          * @brief Construct the mesh by building it and initializing regions.
          * This is the entry point for all mesh creation logic.
          */
@@ -27,6 +33,8 @@ namespace gf {
         virtual ~MeshBuilderStrategy() = default;
 
     protected:
+
+        Domain M_domain;
 
         /**
          * @brief Null method to build the mesh, overridden in the hierarchy
@@ -45,12 +53,10 @@ namespace gf {
 
 
     class BuiltInBuilder : public MeshBuilderStrategy {
-    private:
-        Domain M_domain; ///< Domain parameters
 
     public:
         BuiltInBuilder(const Domain& d):
-        M_domain(d){}
+        MeshBuilderStrategy(d) {}
 
         /**
          * @brief Builds the mesh with the domain information
@@ -67,12 +73,11 @@ namespace gf {
 
 
     class GmshBuilder : public MeshBuilderStrategy {
-        std::string M_meshFile; ///< The mesh filename
 
     public:
         
-        GmshBuilder(const std::string& meshFile):
-        M_meshFile(meshFile){}
+        GmshBuilder(const Domain& d):
+        MeshBuilderStrategy(d) {}
 
         /**
          * @brief Builds the mesh reading information from the .msh file
@@ -83,6 +88,10 @@ namespace gf {
          * @brief Post-process the fault regions automatically imported
          */
         virtual void initRegions(getfem::mesh&) const override;
+    
+    private:
+        
+        void generateMeshFile() const;
 
     };
 

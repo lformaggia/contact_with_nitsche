@@ -1,6 +1,6 @@
 #include "Mesh.hpp"
 
-bool DEBUG = true;
+bool DEBUG = false;
 
 namespace gf {
 
@@ -10,10 +10,10 @@ namespace gf {
         if (DEBUG)
             std::clog << "============= MESH INFORMATION =============\n";
 
-        if (M_params.meshFile.empty())
-            M_meshBuilder = std::make_unique<BuiltInBuilder>(M_params.domain);
+        if (M_params.gmsh)
+            M_meshBuilder = std::make_unique<GmshBuilder>(M_params.domain);
         else
-            M_meshBuilder = std::make_unique<GmshBuilder>(M_params.meshFile);
+            M_meshBuilder = std::make_unique<BuiltInBuilder>(M_params.domain);
         
         M_meshBuilder->construct(M_mesh);
             

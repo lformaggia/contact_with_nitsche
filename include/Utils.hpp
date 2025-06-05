@@ -8,6 +8,7 @@ namespace gf {
     std::vector<std::string> splitString(std::string stringValue);
 
     std::vector<size_type> toVec(std::string stringValue);
+
 } // namespace gf
 
 #endif // _UTILS_HPP_

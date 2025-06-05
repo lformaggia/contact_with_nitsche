@@ -59,8 +59,8 @@ namespace gf {
             getfem::mr_visitor it(M_mesh.region(regionsID[i]));
             base_small_vector n = M_mesh.mean_normal_of_face_of_convex(it.cv(), it.f());
 
-            std::cout << "Normal of region " << regionsID[i] << ": ["
-                << n[0] << ", " << n[1] << ", " << n[2] << "]" << std::endl;
+            // std::cout << "Normal of region " << regionsID[i] << ": ["
+            //     << n[0] << ", " << n[1] << ", " << n[2] << "]" << std::endl;
                 
             if constexpr (T == BCType::Dirichlet) { // build BCDir and add to M_BCList
                 // Build the BCDir object bc

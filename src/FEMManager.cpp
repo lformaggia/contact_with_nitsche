@@ -9,39 +9,28 @@ namespace gf {
         M_mfRhs(mesh) {
         }
 
-    void FEMManager::setMeshFem(const GetPot& datafile, const getfem::mesh& mesh){
+    void FEMManager::setMeshFem(const Numerics &n, const getfem::mesh& mesh){
         
-        if (DEBUGFEM){
-            std::clog << "Setting Finite Element... ";
-        }
-        
-        std::string FEMTypeDisp = datafile("numerics/FEMTypeDisplacement", "FEM_QK(3,1)");
-        std::string FEMTypeStress = datafile("numerics/FEMTypeStress", "FEM_QK(3,1)");
-        std::string FEMTypeRhs = datafile("numerics/FEMTypeRhs", "FEM_QK(3,1)");
-        std::string FEMTypeCoeff = datafile("numerics/FEMTypeCoeff", "FEM_QK(3,0)");
+        std::cout << "Setting Finite Element... ";
 
-        getfem::pfem pfU = getfem::fem_descriptor(FEMTypeDisp);
-        getfem::pfem pfStress = getfem::fem_descriptor(FEMTypeStress);
-        getfem::pfem pfRhs = getfem::fem_descriptor(FEMTypeRhs);
-        getfem::pfem pfCoeff = getfem::fem_descriptor(FEMTypeCoeff);
+        // /** \DEBUG: */
+        // std::cout << "FEMtypeDisp: " << n.FEMTypeDisplacement << std::endl;
+        // std::cout << "FEMtypeStress: " << n.FEMTypeStress << std::endl;
+        // std::cout << "FEMtypeRhs: " << n.FEMTypeRhs << std::endl;
+        // /** \end debug */
+
+
+        getfem::pfem pfU = getfem::fem_descriptor(n.FEMTypeDisplacement);
+        getfem::pfem pfStress = getfem::fem_descriptor(n.FEMTypeStress);
+        getfem::pfem pfRhs = getfem::fem_descriptor(n.FEMTypeRhs);
+
         M_mfU1.set_finite_element(pfU);
         M_mfU2.set_finite_element(pfU);
         M_mfStress1.set_qdim(3,3);
         M_mfStress2.set_qdim(3,3);
-
-        // M_mfU1.set_finite_element(regions.at("BulkLeft")->index(), pfU);
-        // M_mfU2.set_finite_element(regions.at("BulkRight")->index(), pfU);
-        // M_mfStress1.set_finite_element(regions.at("BulkLeft")->index(), pfStress);
-        // M_mfStress2.set_finite_element(regions.at("BulkRight")->index(), pfStress);
-        // M_mfU1.set_finite_element(mesh.region(RegionType::BulkLeft).index(), pfU);
-        // M_mfU2.set_finite_element(mesh.region(RegionType::BulkRight).index(), pfU);
-        // M_mfStress1.set_finite_element(mesh.region(RegionType::BulkLeft).index(), pfStress);
-        // M_mfStress2.set_finite_element(mesh.region(RegionType::BulkRight).index(), pfStress);
         M_mfRhs.set_finite_element(pfRhs);
 
-        if (DEBUGFEM){
-            std::clog << "done." << std::endl;
-        }
+        std::cout << "done." << std::endl;
 
     }
 
