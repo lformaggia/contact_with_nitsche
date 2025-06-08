@@ -36,32 +36,39 @@ namespace gf{
     void
     ContactProblem::assemble()
     {
-        std::cout << "Preparing the assembly phase:\n";
+        using getfem::MPI_IS_MASTER;
+
+        if (MPI_IS_MASTER) std::cout << "Preparing the assembly phase:\n";
+        
         gmm::set_traces_level(1);
         
         dim_type dim = M_mesh.get().dim();
         size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
 
         // Main unknown of the problem (displacement)
-        std::cout << "  Defining variables...";
+        if (MPI_IS_MASTER) std::cout << "  Defining variables...";
+        
         M_model.add_fem_variable("uL", M_FEM.mf_u1());
         M_model.add_fem_variable("uR", M_FEM.mf_u2());
-        std::cout << "done.\n";
+        
+        if (MPI_IS_MASTER) std::cout << "done.\n";
+
 
         // Add scalar data to the model
-        /** \todo Change using the function element_size() from getfem */
-        scalar_type h = M_params.domain.Lx / M_params.domain.Nx;  // typical mesh size
-
-        std::cout << "  Initializing scalar data...";
+        if (MPI_IS_MASTER) std::cout << "  Initializing scalar data...";
+        
         M_model.add_initialized_scalar_data("lambda", M_params.physics.M_lambda);
         M_model.add_initialized_scalar_data("mu", M_params.physics.M_mu);
-        M_model.add_initialized_scalar_data("gammaN", 10*M_params.physics.M_E0/h);
+        M_model.add_initialized_scalar_data("gammaN", 10*M_params.physics.M_E0/M_params.domain.h);
         M_model.add_initialized_scalar_data("theta", M_params.nitsche.theta);  // symmetric variant
         M_model.add_initialized_scalar_data("mu_fric", M_params.physics.M_mu_friction);
-        std::cout << "done.\n";
-       
-        std::cout << "  Defining macros...";
+        
+        if (MPI_IS_MASTER) std::cout << "done.\n";
+
+
         // Define some useful macro for Nitsche contact integrals
+        if (MPI_IS_MASTER) std::cout << "  Defining macros...";
+
         M_model.add_initialized_scalar_data("eps", 1.e-20);
         M_model.add_macro("n", "Normal"); // use normal on contact face
         /** \todo: add macros for t1, t2 */
@@ -109,18 +116,23 @@ namespace gf{
         M_model.add_macro("proj_Pt1_u", "Pt1_u * min(1, Sh / (norm_Pt + eps))");
         M_model.add_macro("proj_Pt2_u", "Pt2_u * min(1, Sh / (norm_Pt + eps))");
 
-        std::cout << "done.\n";
+        if (MPI_IS_MASTER) std::cout << "done.\n";
+
 
         // Add isotropic elasticity bricks
-        std::cout << "  Adding elasticity bricks...";
+        if (MPI_IS_MASTER) std::cout << "  Adding elasticity bricks...";
+        
         getfem::add_isotropic_linearized_elasticity_brick(
             M_model, M_integrationMethod, "uL", "lambda", "mu", RegionType::BulkLeft);
         getfem::add_isotropic_linearized_elasticity_brick(
             M_model, M_integrationMethod, "uR", "lambda", "mu", RegionType::BulkRight);
-        std::cout << "done.\n";
+        
+        if (MPI_IS_MASTER) std::cout << "done.\n";
+
 
         // Add linear stress brick
-        std::cout << "  Adding linear stress brick...";
+        if (MPI_IS_MASTER) std::cout << "  Adding linear stress brick...";
+
         getfem::add_linear_term(
             M_model,
             M_integrationMethod,
@@ -131,11 +143,13 @@ namespace gf{
             "linear_stress",
             false /** check */
         );
-        std::cout << "done.\n";
+
+        if (MPI_IS_MASTER) std::cout << "done.\n";
 
 
         // Add KKT condition brick
-        std::cout << "  Adding KKT condition brick...";
+        if (MPI_IS_MASTER) std::cout << "  Adding KKT condition brick...";
+
         getfem::add_nonlinear_term(
             M_model,
             M_integrationMethod,
@@ -145,10 +159,13 @@ namespace gf{
             false,
             "KKTbrick"
         );
-        std::cout << "done.\n";
+
+        if (MPI_IS_MASTER) std::cout << "done.\n";
+
 
         // Add Coulomb condition brick
-        std::cout << "  Adding Coulomb friction brick";
+        if (MPI_IS_MASTER) std::cout << "  Adding Coulomb friction brick...";
+        
         getfem::add_nonlinear_term(
             M_model,
             M_integrationMethod,
@@ -158,7 +175,8 @@ namespace gf{
             false,
             "CoulombBrick"
         );
-        std::cout << "done.\n";
+        
+        if (MPI_IS_MASTER) std::cout << "done.\n";
 
 
         getfem::add_nonlinear_term(
@@ -182,7 +200,8 @@ namespace gf{
 
         
         // Volumic source term (gravity)
-        std::cout << "  Adding volumic source term brick...";
+        if (MPI_IS_MASTER) std::cout << "  Adding volumic source term brick...";
+        
         plain_vector G(M_FEM.mf_rhs().nb_dof()*dim);
 
         for (size_type i = 0; i < nb_dof_rhs; ++i)
@@ -191,10 +210,13 @@ namespace gf{
         M_model.add_initialized_fem_data("VolumicData", M_FEM.mf_rhs(), G);
         getfem::add_source_term_brick(M_model, M_integrationMethod, "uL", "VolumicData", BulkLeft);
         getfem::add_source_term_brick(M_model, M_integrationMethod, "uR", "VolumicData", BulkRight);
-        std::cout << "done.\n";
+        
+        if (MPI_IS_MASTER) std::cout << "done.\n";
+
 
         // Neumann conditions
-        std::cout << "  Adding Neumann condition bricks...";
+        if (MPI_IS_MASTER) std::cout << "  Adding Neumann condition bricks...";
+        
         const auto & NeumannBCs = M_BC.Neumann();
         plain_vector F(nb_dof_rhs*dim);
         for (const auto& bc: NeumannBCs){
@@ -236,10 +258,13 @@ namespace gf{
                     (M_model, M_integrationMethod, "uR", M_FEM.mf_u2(), bc->ID(), 
                      bc->name());
         }
-        std::cout << "done.\n";
+
+        if (MPI_IS_MASTER) std::cout << "done.\n";
+
 
         // Mixed conditions (normal Dirichlet)
-        std::cout << "  Adding normal Dirichlet condition bricks...";
+        if (MPI_IS_MASTER) std::cout << "  Adding normal Dirichlet condition bricks...";
+
         const auto & MixedBCs = M_BC.Mixed();
         plain_vector M(nb_dof_rhs);
 
@@ -263,14 +288,17 @@ namespace gf{
                 getfem::add_normal_Dirichlet_condition_with_multipliers
                     (M_model, M_integrationMethod, "uR", M_FEM.mf_rhs(), bc->ID(), bc->name());  
         }
-        std::cout << "done.\n";
+
+        if (MPI_IS_MASTER) std::cout << "done.\n";
 
     }
 
     void
     ContactProblem::solve() {
 
-        std::cout << "Solving the problem..." << std::endl;
+        using getfem::MPI_IS_MASTER;
+
+        if (MPI_IS_MASTER) std::cout << "Solving the problem..." << std::endl;
 
         const auto & NeumannBCs = M_BC.Neumann();
         gmm::set_traces_level(1);
@@ -286,7 +314,7 @@ namespace gf{
 
         for (size_type i{}; i < n_timesteps; ++i)
         {
-            std::cout << "t = " << t << std::endl;
+            if (MPI_IS_MASTER) std::cout << "t = " << t << std::endl;
             // Neumann conditions
             for (const auto& bc: NeumannBCs){
                 const auto& rg = bc->getRegion();
@@ -296,7 +324,13 @@ namespace gf{
                 getfem::interpolation_function(M_FEM.mf_rhs(),F,ft, rg);
                 gmm::copy(F, M_model.set_real_variable(bc->name()));
             }
-            
+
+            // Setup parallel solver — choose one of:
+            // getfem::default_linear_solver("mumps")
+            // getfem::default_linear_solver("petsc")
+            // M_model.set_linear_solver(getfem::default_linear_solver("mumps"));
+            // M_model.set_linear_solver(getfem::default_linear_solver("petsc")); // alternative
+
             // Solve the problem
             gmm::iteration iter(M_params.it.atol, 1, M_params.it.maxIt);
             getfem::standard_solve(M_model,iter);

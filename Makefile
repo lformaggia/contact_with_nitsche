@@ -1,80 +1,78 @@
-# From command line: export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
-MU_PARSERX_PATH = ./external/muparserx/build
+# Directories
+SRC_DIR = ./src
+INC_DIR = ./include
+BUILD_DIR = ./build
+MU_PARSERX_DIR = ./external/muparserx/build
+GETFEM_DIR = $(HOME)/getfem-5.4
 
-# Compiler
-CXX = mpicxx
+# Set compiler variables
+CXX = mpic++
+CPPFLAGS = -I$(INC_DIR) \
+  -I$(GETFEM_DIR)/include \
+  -I$(GETFEM_DIR)/src \
+  -I$(GETFEM_DIR)/src/gmm \
+  -I./external/muparserx/parser \
+  -I/usr/include \
+  -I/usr/include/x86_64-linux-gnu
+DEF_TAGS = -DHAVE_CONFIG -DGMM_USES_BLAS -DGMM_USES_MPI=1
+CXXFLAGS = -std=c++20 -O3 $(CPPFLAGS) $(DEFTAGS) -MMD -MP
 
-# Optimize flags
-OPTFLAGS = -O3
-GETFEM_PATH = $(HOME)/getfem-5.4
-INCLUDE = -I$(GETFEM_PATH)/include -I$(GETFEM_PATH)/src -I$(GETFEM_PATH)/src/gmm -I./include -I/usr/include -I/usr/include/x86_64-linux-gnu -I./external/muparserx/parser
-CXXFLAGS = $(INCLUDE) $(OPTFLAGS) 
+# Linker flags: library search paths + runtime linker path
+LDFLAGS = \
+  -L/usr/lib \
+  -L/usr/lib/x86_64-linux-gnu \
+  -L$(MU_PARSERX_DIR) \
+  -Wl,-rpath,/usr/lib/x86_64-linux-gnu
+
+# Libraries to link against
+LDLIBS = \
+  -lgetfem \
+  -lmuparserx \
+  -ldmumps -ldmumps_seq -lmumps_common -lzmumps \
+  -llapack -lblas \
+  -lqhull \
+  -rdynamic
+# Additional
+# LDLIBS += $(GETFEM_LIB) -rdynamic /usr/lib/x86_64-linux-gnu/libqhull.so.8.0 \
+#   /usr/lib/x86_64-linux-gnu/liblapack.so.3 /usr/lib/x86_64-linux-gnu/libblas.so.3
+
+
+# Get all source files in the src directory
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS))
+HEADERS = $(wildcard $(INC_DIR)/*.hpp)
 
 # Executable source
-EXESRCS = main.cpp
+EXE_SRCS = main.cpp
+EXE_OBJS = $(EXE_SRCS:.cpp=.o)
+EXEC = $(EXE_SRCS:.cpp=)
 
-# Executable object file
-EXEOBJS = $(EXESRCS:.cpp = .o)
-
-# Executable name
-EXEC = main
-
-# Sources folder
-FOLDER = src/
-
-
-# Laptop
-LIB_PATH = /usr/lib /usr/lib/x86_64-linux-gnu $(MU_PARSERX_PATH)
-
-
-# Laptop
-LDLIBS = /usr/local/lib/libgetfem.a
-####### ADDED
-LDLIBS += -Wl,-rpath,/usr/lib/x86_64-linux-gnu
-LDLIBS += -L$(MU_PARSERX_PATH) -lmuparserx
-LDLIBS += -ldmumps -ldmumps_seq -lmumps_common -lblas -llapack -ldmumps -lzmumps
-
-######## END ADDED
-
-# Laptop
-LDLIBS += $(GETFEM_LIB) -rdynamic /usr/lib/x86_64-linux-gnu/libqhull.so.8.0 /usr/lib/x86_64-linux-gnu/liblapack.so.3 /usr/lib/x86_64-linux-gnu/libblas.so.3
-
-
-DEF_TAGS = -DHAVE_CONFIG -DGMM_USES_BLAS -DGMM_USES_MPI=1
-
-# Sources
-SRCS = $(wildcard $(FOLDER)*.cpp)
-
-# Objects
-OBJS = $(SRCS:.cpp=.o)
-
-# Headers
-HEADERS = $(SRCS:.cpp=.hpp)
-
-# Name file of dependences
-DEPEND = make.dep
+# Dependencies
+DEPS = $(OBJS:.o=.d) $(EXE_OBJS:.o=.d)
 
 .PHONY: all clean
+.DEFAULT_GOAL = all
 
+all: $(EXEC)
 
-all : $(DEPEND) $(OBJS) $(EXEOBJS)
-	$(CXX) $(OPTFLAGS) -o $(EXEC) $(EXEOBJS) $(OBJS) $(LDLIBS) $(DEF_TAGS) $(INCLUDE) 
+$(EXEC): $(EXE_OBJS) $(OBJS)
+	$(CXX) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
-main :  $(DEPEND) $(OBJS) main.o
-	$(CXX) $(OPTFLAGS) -o $(EXEC) main.o $(OBJS) $(LDLIBS) $(DEF_TAGS) $(INCLUDE)
+%.o: %.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
-$(DEPEND) : $(SRCS) $(EXESRCS)
-	$(CXX) -MM $(SRCS) $(EXESRCS) -MF $(DEPEND)  $(INCLUDE) 
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
--include $(DEPEND)
+-include $(DEPS)
 
 clean:
-	@$(RM) $(OBJS) $(EXECOBJS)
+	@$(RM) -f $(OBJS) $(EXE_OBJS) $(DEPS)
 
 distclean: clean
 	$(RM) $(EXEC)
 	$(RM) -f ./doc
-	$(RM) *.out *.bak *.dep *.log *~ fractured_mesh.* *.vtk
+	$(RM) *.out *.bak *.log *~ *.vtk
 
 doc:
 	doxygen $(DOXYFILE)

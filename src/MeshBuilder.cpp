@@ -278,7 +278,7 @@ namespace gf {
         // Extract parameters from domain (already read from .pot)
         scalar_type Lx = M_domain.Lx, Ly = M_domain.Ly, Lz = M_domain.Lz, h = M_domain.h;
         scalar_type faultX0 = Lx/2;
-        scalar_type faultX1 = Lx/2 + Lz*std::tan(M_domain.angle);
+        scalar_type faultX1 = Lx/2 + Lz*std::tan(M_domain.angle*M_PI/180.0);
 
         std::ofstream meshfile("fractured_mesh.geo");
         if (!meshfile.is_open())
@@ -392,7 +392,8 @@ namespace gf {
         // Run Gmsh to generate the mesh
         std::string gmsh_cmd = "gmsh fractured_mesh.geo -3 -format msh2 -o fractured_mesh.msh > gmsh.log 2>&1";
         int gmsh_status = std::system(gmsh_cmd.c_str());
-        if (gmsh_status != 0)
+        // if (gmsh_status != 0)
+        if (gmsh_status == -1 || !WIFEXITED(gmsh_status) || WEXITSTATUS(gmsh_status) != 0)
             throw std::runtime_error("Gmsh mesh generation failed.");
 
     }

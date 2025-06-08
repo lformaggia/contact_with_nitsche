@@ -1,8 +1,8 @@
 [domain]
-angle = 5                      % Inclination degree (ignored if the mesh is built-in)
+angle = -2                      % Inclination degree (ignored if the mesh is built-in)
 Lx = 1                          % Lenght of domain side along x
-Ly = 2                          % Lenght of domain side along y
-Lz = 2                          % Lenght of domain side along z
+Ly = 3                          % Lenght of domain side along y
+Lz = 3                          % Lenght of domain side along z
 h = 0.25                        % Grid spacing
 meshType = GT_QK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK(3,1) for tetrahedron
 [../]
@@ -10,10 +10,10 @@ meshType = GT_QK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK
 [physics]
 E = 25000                       % Young modulus
 nu = 0.25                       % Poisson ratio
-bulkLoad = [0.,0.,-0.]          % gravity
-mu_friction = 0.4               % friction coefficient
+bulkLoad = [0.,0.,-0.]          % Gravity
+mu_friction = 0.5               % Friction coefficient
 
-regionDisp = [1,5]
+regionDisp = [1,5]              % Dirichlet bd regions
 bdDisp1 = {0.,0.,0.}
 bdDisp2 = {0.,0.,0.}
 bdDisp3 = {0.,0.,0.}
@@ -24,26 +24,26 @@ bdDisp7 = {0.,0.,0.}
 bdDisp8 = {0.,0.,0.}
 bdDisp9 = {0.,0.,0.}
 
-regionDispNormal = [9]
+regionDispNormal = [9]          % Normal Dirichlet bd regions
 bdDispN1 = 0.
 bdDispN2 = 0.
 bdDispN3 = 0.
 
-regionLoad = [7,10]                           # [7,10]
+regionLoad = [7,10]             % Neumann bd regions
 bdLoad1 = {0,0,-5*t/5}
-bdLoad2 = {-2,0,0}
+bdLoad2 = {-5,0,0}
 [../]
 
 [it]
-tol = 1.0e-14            % tolerance for contact
-maxit = 30               % maximum number of iteration
+tol = 1.0e-14                   % Tolerance for contact
+maxit = 30                      % Maximum number of iteration
 atol = 0.
 theta = 1                       % +1 0 -1 Nitsche 
 gamma = 10                      % Nitsche parameter
 [../]
 
 [time]
-t0 = 0.0                       % starting time
-tend = 7                       % ending time
-dt = 0.5                       % timestep
+t0 = 0.0                       % Starting time
+tend = 7                       % Ending time
+dt = 0.5                       % Timestep
 [../]

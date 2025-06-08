@@ -1,5 +1,7 @@
 /external/
+/build/
 *.o
-./src/*.o
+*.d
+*.log
 *.vtk
 main

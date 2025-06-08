@@ -38,8 +38,6 @@ namespace gf{
          */
         void assemble();
 
-        void assemble(int argc, char* argv[]);
-
         /**
          * @brief Solve the linear system
          */
