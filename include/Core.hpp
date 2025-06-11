@@ -1,14 +1,14 @@
 #ifndef _CORE_HPP_
 #define _CORE_HPP_
 
-// Level Set and Xfem stuff:
+
 #include <getfem/getfem_regular_meshes.h>
 #include <getfem/getfem_interpolation.h>
 #include <getfem/getfem_derivatives.h>
 #include <getfem/getfem_config.h>
-#include <getfem/getfem_assembling.h> // import assembly methods (and comp. of 
+#include <getfem/getfem_assembling.h>
 #include <getfem/getfem_import.h>
-#include <getfem/getfem_export.h>     // export functions (save the solution in a file)
+#include <getfem/getfem_export.h>
 #include <gmm/gmm.h>
 #include <gmm/gmm_inoutput.h>
 #include <gmm/gmm_MUMPS_interface.h>
@@ -38,10 +38,10 @@
 
 namespace gf {
     
-    /* some Getfem++ types that we will be using */
+    // some Getfem++ types that are used
     using bgeot::scalar_type; ///< = double
     using bgeot::base_small_vector; ///< special class for small (dim < 16) vectors
-    using bgeot::base_vector;
+    using bgeot::base_vector; ///< just a std::vector<scalar_type>
     using bgeot::base_node; ///< geometrical nodes (derived from base_small_vector)
     using bgeot::size_type; ///< basically std::vector<scalar_type>::size_type
     using bgeot::dim_type;
@@ -49,8 +49,6 @@ namespace gf {
     using ScalarFunctionType = std::function<scalar_type(base_node,scalar_type)>; ///< f(\vector{x},t)
     using VectorFunctionType = std::function<base_small_vector(base_node, scalar_type)>; ///< \vector{f}(\vector{x},t)
     
-    /* definition of some matrix/vector types. These ones are built
-    using the predefined types in Gmm++ */
     using sparse_vector = getfem::modeling_standard_sparse_vector;
     using sparse_matrix = getfem::modeling_standard_sparse_matrix;
     using plain_vector = getfem::modeling_standard_plain_vector;

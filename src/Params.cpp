@@ -114,31 +114,6 @@ namespace gf {
         os << "--FEMTypeDisplacement = " << p.numerics.FEMTypeDisplacement << "\n";
         os << "--FEMTypeStress = " << p.numerics.FEMTypeStress << "\n";
         os << "--FEMTypeRhs = " << p.numerics.FEMTypeRhs << "\n";
-        os << "BC STRINGS:\n";
-        os << "-- regionsDirID: ";
-        for (const auto& id : p.bc.regionsDirID) {
-            os << id << " ";
-        }
-        os << "\n-- regionsNeuID: ";
-        for (const auto& id : p.bc.regionsNeuID) {
-            os << id << " ";
-        }
-        os << "\n-- regionsMixID: ";
-        for (const auto& id : p.bc.regionsMixID) {
-            os << id << " ";
-        }
-        os << "\n-- stringsDir: ";
-        for (const auto& str : p.bc.stringsDir) {
-            os << str << " ";
-        }
-        os << "\n-- stringsNeu: ";
-        for (const auto& str : p.bc.stringsNeu) {
-            os << str << " ";
-        }
-        os << "\n-- stringsMix: ";
-        for (const auto& str : p.bc.stringsMix) {
-            os << str << " ";
-        }
         os << "\nVERBOSE: " << (p.verbose ? "true" : "false") << "\n";
         os << "GMSH: " << (p.gmsh ? "true" : "false") << "\n";
         os << "============================================\n";

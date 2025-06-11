@@ -69,10 +69,8 @@ namespace gf{
 
         M_model.add_initialized_scalar_data("eps", 1.e-20);
         M_model.add_macro("n", "Normal"); // use normal on contact face
-        /** \todo: add macros for t1, t2 */
-        // Choose auxiliary vector `a` robustly
         M_model.add_macro("eps_dir", "1e-4"); // to avoid numerical degeneracies
-        M_model.add_macro("a", "[0, 1, 0]");
+        M_model.add_macro("a", "[0, 1, 0]"); /** \todo Modify a to be more robust */
 
         // Project a onto plane orthogonal to n
         M_model.add_macro("t1_raw", "a - (a . n) * n");
