@@ -3,18 +3,17 @@ SRC_DIR = ./src
 INC_DIR = ./include
 BUILD_DIR = ./build
 MU_PARSERX_DIR = ./external/muparserx/build
-GETFEM_DIR = $(HOME)/getfem-5.4
 
 # Set compiler variables
 CXX = mpic++
 CPPFLAGS = -I$(INC_DIR) \
-  -I$(GETFEM_DIR)/include \
-  -I$(GETFEM_DIR)/src \
-  -I$(GETFEM_DIR)/src/gmm \
+  -I/usr/local/include \
+  -I/usr/local/include/getfem \
+  -I/usr/local/include/gmm \
   -I./external/muparserx/parser \
   -I/usr/include \
   -I/usr/include/x86_64-linux-gnu
-DEF_TAGS = -DHAVE_CONFIG -DGMM_USES_BLAS -DGMM_USES_MPI=1
+DEF_TAGS = -DHAVE_CONFIG -DGMM_USES_BLAS -DGMM_USES_MPI=0
 CXXFLAGS = -std=c++20 -O3 $(CPPFLAGS) $(DEFTAGS) -MMD -MP
 
 # Linker flags: library search paths + runtime linker path
@@ -28,13 +27,10 @@ LDFLAGS = \
 LDLIBS = \
   -lgetfem \
   -lmuparserx \
-  -ldmumps -ldmumps_seq -lmumps_common -lzmumps \
+  -ldmumps_seq -lmumps_common_seq -lsmumps_seq -lcmumps_seq \
   -llapack -lblas \
   -lqhull \
   -rdynamic
-# Additional
-# LDLIBS += $(GETFEM_LIB) -rdynamic /usr/lib/x86_64-linux-gnu/libqhull.so.8.0 \
-#   /usr/lib/x86_64-linux-gnu/liblapack.so.3 /usr/lib/x86_64-linux-gnu/libblas.so.3
 
 
 # Get all source files in the src directory

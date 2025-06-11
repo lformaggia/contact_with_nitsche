@@ -19,26 +19,26 @@ namespace gf {
             
         if (DEBUG){
             std::clog << "\n\n============= REGION INFORMATION =============" << std::endl;
-            // M_mesh.write_to_file(std::cout);
+            M_mesh.write_to_file(std::cout);
 
-            // // Check boundary regions
-            // {
-            //     std::clog << std::endl;
-            //     for (size_type i = 1; i < 11; ++i) {
-            //         const getfem::mesh_region& region = M_mesh.region(i);
+            // Check boundary regions
+            {
+                std::clog << std::endl;
+                for (size_type i = 1; i < 11; ++i) {
+                    const getfem::mesh_region& region = M_mesh.region(i);
 
-            //         std::clog << "Boundary region " << i << " has " << region.size() << " elements" << std::endl;
-            //         std::clog << "Number of convexes in region: " << region.nb_convex() << std::endl;
-            //         std::clog << "Region contains only faces: " << region.is_only_faces() << std::endl;
-            //         std::clog << "Region contains only convexes: " << region.is_only_convexes() << std::endl;
+                    std::clog << "Boundary region " << i << " has " << region.size() << " elements" << std::endl;
+                    std::clog << "Number of convexes in region: " << region.nb_convex() << std::endl;
+                    std::clog << "Region contains only faces: " << region.is_only_faces() << std::endl;
+                    std::clog << "Region contains only convexes: " << region.is_only_convexes() << std::endl;
 
-            //         std::clog << "Elements in region " << i << ": ";
-            //         for (getfem::mr_visitor it(region); !it.finished(); ++it) {
-            //             std::clog << "(" << it.cv() << ", " << it.f() << ") ";
-            //         }
-            //         std::clog << std::endl << std::endl;
-            //     }
-            // }
+                    std::clog << "Elements in region " << i << ": ";
+                    for (getfem::mr_visitor it(region); !it.finished(); ++it) {
+                        std::clog << "(" << it.cv() << ", " << it.f() << ") ";
+                    }
+                    std::clog << std::endl << std::endl;
+                }
+            }
 
             // Check BulkLeft
             {
