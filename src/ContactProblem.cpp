@@ -317,7 +317,7 @@ namespace gf{
 
         for (size_type i{}; i < n_timesteps; ++i)
         {
-            std::cout << "t = " << t << std::endl;
+            std::cout << "\nt = " << t << std::endl;
             // Neumann conditions
             for (const auto& bc: NeumannBCs){
                 const auto& rg = bc->getRegion();
@@ -358,15 +358,17 @@ namespace gf{
         plain_vector &uL = M_model.set_real_variable("uL");
         plain_vector &uR = M_model.set_real_variable("uR");
 
-        auto dofsL = M_FEM.mf_u1().dof_on_region(M_mesh.region(BulkLeft));
-        auto dofsR = M_FEM.mf_u2().dof_on_region(M_mesh.region(BulkRight));
-        auto dofsF = dofsL & dofsR; // shared dofs on the fault
-        dofsL.setminus(dofsF);
-        dofsR.setminus(dofsF);
+        auto dofs_uL = M_FEM.mf_u1().dof_on_region(M_mesh.region(BulkLeft));
+        auto dofs_uR = M_FEM.mf_u2().dof_on_region(M_mesh.region(BulkRight));
+        auto dofs_uF = dofs_uL & dofs_uR; // shared dofs on the fault
+        auto dofs_uL_filtered = dofs_uL;
+        auto dofs_uR_filtered = dofs_uR;
+        dofs_uL_filtered.setminus(dofs_uF);
+        dofs_uR_filtered.setminus(dofs_uF);
 
-        for (dal::bv_visitor i(dofsL); !i.finished(); ++i)
+        for (dal::bv_visitor i(dofs_uL_filtered); !i.finished(); ++i)
             uR[i] = 0.0;
-        for (dal::bv_visitor j(dofsR); !j.finished(); ++j)
+        for (dal::bv_visitor j(dofs_uR_filtered); !j.finished(); ++j)
             uL[j] = 0.0;
 
         M_FEM.mf_stress().set_qdim(3,3); // Voigt: [Sxx, Syy, Szz, Syz, Sxz, Sxy]
@@ -380,35 +382,271 @@ namespace gf{
         getfem::ga_interpolation_Lagrange_fem(M_model, "stressL", M_FEM.mf_stress(), VL);
         getfem::ga_interpolation_Lagrange_fem(M_model, "stressR", M_FEM.mf_stress(), VR);
 
-        dofsL = M_FEM.mf_stress().dof_on_region(M_mesh.region(BulkLeft));
-        dofsR = M_FEM.mf_stress().dof_on_region(M_mesh.region(BulkRight));
-        dofsF = dofsL & dofsR; // shared dofs on the fault
-        dofsL.setminus(dofsF);
-        dofsR.setminus(dofsF);
+        auto dofs_sL = M_FEM.mf_stress().dof_on_region(M_mesh.region(BulkLeft));
+        auto dofs_sR = M_FEM.mf_stress().dof_on_region(M_mesh.region(BulkRight));
+        auto dofs_sF = dofs_sL & dofs_sR; // shared dofs on the fault
+        auto dofs_sL_filtered = dofs_sL;
+        auto dofs_sR_filtered = dofs_sR;
+        dofs_sL_filtered.setminus(dofs_sF);
+        dofs_sR_filtered.setminus(dofs_sF);
 
-        for (dal::bv_visitor i(dofsL); !i.finished(); ++i)
+        for (dal::bv_visitor i(dofs_sL_filtered); !i.finished(); ++i)
             VR[i] = 0.0;
-        for (dal::bv_visitor j(dofsR); !j.finished(); ++j)
+        for (dal::bv_visitor j(dofs_sR_filtered); !j.finished(); ++j)
             VL[j] = 0.0;
 
         std::cout << "done." << std::endl;
 
-        getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
-        exp.exporting(M_FEM.mf_u1());
-        exp.write_mesh();
-        exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
-        exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
+        // Custom export to VTK
+        std::cout << "Exporting results to result_" << i << ".vtk..." << std::endl;
 
-        gmm::clean(VL, 1E-20);
-        exp.exporting(M_FEM.mf_stress());
-        exp.write_point_data(M_FEM.mf_stress(), VL, "stressL");
+        scalar_type offset = 1e-5; // offset for visualization
 
-        gmm::clean(VR, 1E-20);
-        exp.exporting(M_FEM.mf_stress());
-        exp.write_point_data(M_FEM.mf_stress(), VR, "stressR");
+        // const plain_vector& uL = M_model.real_variable("uL");
+        // const plain_vector& uR = M_model.real_variable("uR");
+
+        size_type nb_dof_L = dofs_uL.card();
+        size_type nb_dof_R = dofs_uR.card();
+        size_type nb_dof_F = dofs_uF.card();
+        size_type nb_dof = M_FEM.mf_u1().nb_dof();
+        size_type nb_dof_tot = nb_dof_L + nb_dof_R; // == nb_dof + nb_dof_F
+
+        plain_vector U;
+        U.reserve(nb_dof_tot);
+        std::vector<base_small_vector> U_vector;
+        U_vector.reserve(U.size() / dim);
+
+        std::vector<base_node> dof_coords;
+        dof_coords.reserve(nb_dof_tot / dim);  // each node has 3 dofs
+
+        // Map original dof index to new index in U
+        std::map<size_type, size_type> dof_map;
+        std::map<size_type, size_type> dof_to_point;
+
+        // Insert uL values
+        for (dal::bv_visitor ii(dofs_uL); !ii.finished(); ++ii) {
+            size_type dof = ii;
+            if (dof % dim == 0) {  // only once per node
+                base_node pt = M_FEM.mf_u1().point_of_basic_dof(dof);
+                pt[0] -= offset;
+                dof_coords.push_back(pt);
+                size_type pt_idx = dof_coords.size() - 1;
+                dof_to_point[dof] = pt_idx;
+            }
+            U.push_back(uL[dof]);
+        }
+
+        // Insert uR values
+        for (dal::bv_visitor jj(dofs_uR); !jj.finished(); ++jj) {
+            size_type dof = jj;
+            if (dof % dim == 0) {  // only once per node
+                base_node pt = M_FEM.mf_u2().point_of_basic_dof(dof);
+                pt[0] += offset;
+                dof_coords.push_back(pt);
+                size_type pt_idx = dof_coords.size() - 1;
+                dof_to_point[dof] = pt_idx;
+            }
+            U.push_back(uR[dof]);
+        }
+
+        for (size_type i = 0; i < U.size(); i += dim) {
+            base_small_vector vec(dim);
+            for (size_type d = 0; d < dim; ++d)
+                vec[d] = U[i + d];
+            U_vector.emplace_back(vec);
+        }
+
+        assert(U_vector.size() == dof_coords.size());
+
+        // Write stress in Voigt notation
+        std::vector<std::array<double, 6>> stress_voigt(dof_coords.size());
+
+        auto insert_stress_voigt = [&](const plain_vector &V, const dal::bit_vector &dofs, double offset_sign) {
+            for (dal::bv_visitor ii(dofs); !ii.finished(); ++ii) {
+                size_type dof = ii;
+                if (dof % 9 == 0) {
+                    base_node pt = M_FEM.mf_stress().point_of_basic_dof(dof);
+                    pt[0] += offset_sign * offset;
+
+                    for (size_type i = 0; i < dof_coords.size(); ++i) {
+                        if (gmm::vect_dist2(pt, dof_coords[i]) < 1e-10) {
+                            stress_voigt[i] = {
+                                V[dof + 0],                          // Sxx
+                                V[dof + 4],                          // Syy
+                                V[dof + 8],                          // Szz
+                                0.5 * (V[dof + 5] + V[dof + 7]),     // Syz
+                                0.5 * (V[dof + 2] + V[dof + 6]),     // Sxz
+                                0.5 * (V[dof + 1] + V[dof + 3])      // Sxy
+                            };
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+
+        insert_stress_voigt(VL, dofs_sL, -1.0);
+        insert_stress_voigt(VR, dofs_sR, +1.0);
+
+
+        // Build connectivity
+        std::vector<std::vector<size_type>> cells;
+        std::vector<int> cell_types;
+
+        auto reorderNodesForVTK = [](std::vector<size_type>& nodes, bool isHex) {
+            if (isHex){
+                std::swap(nodes[2], nodes[3]);
+                std::swap(nodes[6], nodes[7]);
+                return nodes;
+            }
+            // For tetrahedra, no reordering needed
+            return nodes;
+        };
+
+
+        for (getfem::mr_visitor i(M_mesh.region(BulkLeft)); !i.finished(); ++i) {
+            const bgeot::pconvex_structure cvs = M_mesh.get().structure_of_convex(i.cv());
+            size_type nb_pts = cvs->nb_points();
+            std::vector<size_type> pt_indices;
+
+            for (size_type ipt = 0; ipt < nb_pts; ++ipt) {
+                base_node pt = M_mesh.get().points_of_convex(i.cv())[ipt];
+                // std::cout << "point " << ipt << " in cv " << i.cv() << ": "
+                //     << pt[0] << ", " << pt[1] << ", " << pt[2] << std::endl;
+                pt[0] -= offset;
+
+                // Find corresponding index in dof_coords
+                bool found = false;
+                for (size_type i = 0; i < dof_coords.size(); ++i) {
+                    if (gmm::vect_dist2(pt, dof_coords[i]) < 1e-10) {
+                        pt_indices.push_back(i);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    std::cerr << "Warning: point not found in coordinate list.\n";
+                }
+            }
+
+            if (pt_indices.size() == nb_pts) {
+                auto cvx_type = M_params.domain.meshType == "GT_PK(3,1)"? 10 : 12;
+                cells.push_back(reorderNodesForVTK(pt_indices, cvx_type == 12));
+                cell_types.push_back(cvx_type);
+            }
+        }
+
+        for (getfem::mr_visitor i(M_mesh.region(BulkRight)); !i.finished(); ++i) {
+            const bgeot::pconvex_structure cvs = M_mesh.get().structure_of_convex(i.cv());
+            size_type nb_pts = cvs->nb_points();
+            std::vector<size_type> pt_indices;
+
+            for (size_type ipt = 0; ipt < nb_pts; ++ipt) {
+                base_node pt = M_mesh.get().points_of_convex(i.cv())[ipt];
+                // std::cout << "point " << ipt << " in cv " << i.cv() << ": "
+                //     << pt[0] << ", " << pt[1] << ", " << pt[2] << std::endl;
+                pt[0] += offset;
+
+                // Find corresponding index in dof_coords
+                bool found = false;
+                for (size_type i = 0; i < dof_coords.size(); ++i) {
+                    if (gmm::vect_dist2(pt, dof_coords[i]) < 1e-10) {
+                        pt_indices.push_back(i);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    std::cerr << "Warning: point not found in coordinate list.\n";
+                }
+            }
+
+            if (pt_indices.size() == nb_pts) {
+                auto cvx_type = M_params.domain.meshType == "GT_PK(3,1)"? 10 : 12;
+                cells.push_back(reorderNodesForVTK(pt_indices, cvx_type == 12));
+                cell_types.push_back(cvx_type);
+            }
+        }
+
+        // Export to vtk (custom)
+        std::string filename = "result_" + std::to_string(i) + ".vtk";
+
+        std::ofstream out(filename);
+        if (!out) {
+            std::cerr << "Cannot open file " << filename << " for writing.\n";
+            return;
+        }
+
+        out << "# vtk DataFile Version 3.0\n";
+        out << "Custom GetFEM Export\n";
+        out << "ASCII\n";
+        out << "DATASET UNSTRUCTURED_GRID\n";
+
+        out << "POINTS " << dof_coords.size() << " float\n";
+        for (const auto& pt : dof_coords) {
+            for (size_t d = 0; d < dim; ++d)
+                out << pt[d] << " ";
+            out << "\n";
+        }
+
+        out << "CELLS " << cells.size() << " ";
+        size_type total_idx_count = 0;
+        for (const auto &c : cells) total_idx_count += c.size() + 1;
+        out << total_idx_count << "\n";
+
+        for (const auto &c : cells) {
+            out << c.size();
+            for (auto idx : c) out << " " << idx;
+            out << "\n";
+        }
+
+        out << "CELL_TYPES " << cell_types.size() << "\n";
+        for (auto t : cell_types) out << t << "\n";
+
+        out << "POINT_DATA " << U_vector.size() << "\n";
+        out << "VECTORS U float\n";
+        for (const auto& v : U_vector) {
+            for (size_t d = 0; d < dim; ++d)
+                out << v[d] << " ";
+            out << "\n";
+        }
+
+        out << "FIELD StressField 1\n";
+        out << "StressVoigt 6 " << stress_voigt.size() << " float\n";
+        for (const auto &v : stress_voigt)
+            out << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " " << v[4] << " " << v[5] << "\n";
+
+        std::cout << "done." << std::endl;
 
         M_model.set_real_variable("uL") = uL_backup;
         M_model.set_real_variable("uR") = uR_backup;
+
+    }
+
+} // namespace gf
+
+
+
+
+        // INTERNAL EXPORT
+
+        // getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
+        // exp.exporting(M_FEM.mf_u1());
+        // exp.write_mesh();
+        // exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
+        // exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
+
+        // gmm::clean(VL, 1E-20);
+        // exp.exporting(M_FEM.mf_stress());
+        // exp.write_point_data(M_FEM.mf_stress(), VL, "stressL");
+
+        // gmm::clean(VR, 1E-20);
+        // exp.exporting(M_FEM.mf_stress());
+        // exp.write_point_data(M_FEM.mf_stress(), VR, "stressR");
+
+        // UNCOMMENT THIS!!!
+        // M_model.set_real_variable("uL") = uL_backup;
+        // M_model.set_real_variable("uR") = uR_backup;
 
             // Alternatively, export in Voigt notation
                 // size_type voigt_dim = (dim == 2) ? 3 : 6;
@@ -419,170 +657,4 @@ namespace gf{
 
                 // getfem::ga_interpolation_Lagrange_fem(M_model, "stressL_voigt", M_FEM.mf_stress(), VL);
                 // getfem::ga_interpolation_Lagrange_fem(M_model, "stressR_voigt", M_FEM.mf_stress(), VR);
-
-
-        std::cout << "Exported results to result_" << i << ".vtk" << std::endl;
-
-
-
-        // CUSTOM EXPORT
-        
-        // const plain_vector& uL = M_model.real_variable("uL");
-        // const plain_vector& uR = M_model.real_variable("uR");
-
-        // dal::bit_vector dofsL = M_FEM.mf_u1().basic_dof_on_region(BulkLeft);
-        // dal::bit_vector dofsR = M_FEM.mf_u2().basic_dof_on_region(BulkRight);
-        // dal::bit_vector dofsF = M_FEM.mf_u1().basic_dof_on_region(Fault);
-
-        // size_type nb_dof_L = dofsL.card();
-        // size_type nb_dof_R = dofsR.card();
-        // size_type nb_dof_F = dofsF.card();
-        // size_type nb_dof = M_FEM.mf_u1().nb_dof();
-        // size_type nb_dof_tot = nb_dof_L+nb_dof_R; // == nb_dof + nb_dof_L
-
-        // // for (dal::bv_visitor bv(dofsL); !bv.finished();++bv) std::cout << bv << " ";
-        // // std::cout << std::endl;
-        
-        // // Compute the actual intersection of Left and Right
-        // dal::bit_vector intersection = dofsL & dofsR;
-
-        // // std::cout << "\nDofsF: " << std::endl;
-        // // for (dal::bv_visitor bv(dofsF); !bv.finished();++bv) std::cout << bv << " ";
-
-
-        // plain_vector U;
-        // U.reserve(nb_dof_tot);
-        // std::vector<base_node> dof_coords;
-        // dof_coords.reserve(nb_dof_tot);
-
-        // // Map original dof index to new index in U
-        // std::map<size_type, size_type> dof_map;
-        // std::map<size_type, size_type> dof_to_point;
-
-        // // Insert uL values
-        // for (dal::bv_visitor ii(dofsL); !ii.finished(); ++ii) {
-        //     size_type dof = ii;
-        //     if (dof % dim == 0) {  // only once per node
-        //         base_node pt = M_FEM.mf_u1().point_of_basic_dof(dof);
-        //         pt[0] -= 1e-16;
-        //         dof_coords.push_back(pt);
-        //         size_type pt_idx = dof_coords.size() - 1;
-        //         dof_to_point[dof] = pt_idx;
-        //     }
-        //     U.push_back(uL[dof]);
-        // }
-
-        // // Insert uR values
-        // for (dal::bv_visitor jj(dofsR); !jj.finished(); ++jj) {
-        //     size_type dof = jj;
-        //     if (dof % dim == 0) {  // only once per node
-        //         base_node pt = M_FEM.mf_u2().point_of_basic_dof(dof);
-        //         pt[0] += 1e-16;
-        //         dof_coords.push_back(pt);
-        //         size_type pt_idx = dof_coords.size() - 1;
-        //         dof_to_point[dof] = pt_idx;
-        //     }
-        //     U.push_back(uL[dof]);
-        // }
-
-
-        // std::vector<base_small_vector> U_vector;
-        // U_vector.reserve(U.size() / dim);
-
-        // for (size_type i = 0; i < U.size(); i += dim) {
-        //     base_small_vector vec(dim);
-        //     for (size_type d = 0; d < dim; ++d)
-        //         vec[d] = U[i + d];
-        //     U_vector.emplace_back(vec);
-        // }
-
-        // assert(U_vector.size() == dof_coords.size());
-
-        // // Build connectivity matrix
-        // std::vector<std::vector<size_type>> connectivity;
-
-        // for (dal::bv_visitor cv(M_mesh.get().convex_index()); !cv.finished(); ++cv) {
-        //     auto dofs = M_FEM.mf_u1().ind_basic_dof_of_element(cv);
-        //     std::vector<size_type> cell;
-
-        //     for (size_type d = 0; d < dofs.size(); d += dim) {
-        //         size_type dof_id = dofs[d]; // one per point
-        //         auto it = dof_to_point.find(dof_id);
-        //         if (it != dof_to_point.end()) {
-        //             cell.push_back(it->second);
-        //         } else {
-        //             std::cerr << "DOF " << dof_id << " not found in dof_to_point!\n";
-        //         }
-        //     }
-
-        //     if ((dim == 3 && (cell.size() == 4 || cell.size() == 8)) ||
-        //         (dim == 2 && (cell.size() == 3 || cell.size() == 4))) {
-        //         connectivity.push_back(cell);
-        //     }
-        // }
-
-        // // Export to vtk (custom)
-        // std::string filename = "result_" + std::to_string(i) + ".vtk";
-
-        // std::ofstream out(filename);
-        // if (!out) {
-        //     std::cerr << "Cannot open file " << filename << " for writing.\n";
-        //     return;
-        // }
-
-        // out << "# vtk DataFile Version 3.0\n";
-        // out << "Custom GetFEM Export\n";
-        // out << "ASCII\n";
-        // out << "DATASET UNSTRUCTURED_GRID\n";
-
-        // out << "POINTS " << dof_coords.size() << " float\n";
-        // for (const auto& pt : dof_coords) {
-        //     for (size_t d = 0; d < dim; ++d)
-        //         out << pt[d] << " ";
-        //     out << "\n";
-        // }
-
-
-        // size_t num_cells = connectivity.size();
-        // size_t total_ints = 0;
-        // for (const auto& c : connectivity)
-        //     total_ints += (1 + c.size()); // size prefix + indices
-
-        // out << "CELLS " << num_cells << " " << total_ints << "\n";
-        // for (const auto& c : connectivity) {
-        //     out << c.size();
-        //     for (auto idx : c)
-        //         out << " " << idx;
-        //     out << "\n";
-        // }
-
-        // out << "CELL_TYPES " << num_cells << "\n";
-        // for (const auto& c : connectivity) {
-        //     int vtk_type = -1;
-        //     if (c.size() == 3) vtk_type = 5;        // triangle
-        //     else if (c.size() == 4) vtk_type = 10;  // tetrahedron
-        //     else if (c.size() == 8) vtk_type = 12;  // hexahedron
-        //     else if (c.size() == 6) vtk_type = 13;  // wedge (prism), optional
-        //     else if (c.size() == 5) vtk_type = 14;  // pyramid, optional
-        //     else throw std::runtime_error("Unsupported element type with " + std::to_string(c.size()) + " points.");
-        //     out << vtk_type << "\n";
-        // }
-
-        // out << "POINT_DATA " << U_vector.size() << "\n";
-        // out << "VECTORS U float\n";
-        // for (const auto& v : U_vector) {
-        //     for (size_t d = 0; d < dim; ++d)
-        //         out << v[d] << " ";
-        //     out << "\n";
-        // }
-
-        // std::cout << "VTK file written to: " << filename << "\n";
-
-        // getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
-        // exp.exporting(M_FEM.mf_u1());
-        // exp.write_mesh();
-        // exp.write_point_data(M_FEM.mf_u1(), U, "u");
-
-    }
-
-} // namespace gf
+   
