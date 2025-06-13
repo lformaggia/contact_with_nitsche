@@ -10,16 +10,19 @@ namespace gf{
     M_BC(m.get()),
     M_FEM(m.get()),
     M_integrationMethod(m.get()),
-    M_integrationMethodSurface(m.get()),
     M_imData(M_integrationMethod)
     {
+        if (M_params.contact.method == "nitsche")
+            M_contactEnforcement = std::make_unique<NitscheContactEnforcement>(
+                M_params.contact.theta, M_params.contact.gamma0);
+        else if (M_params.contact.method == "penalty")
+            M_contactEnforcement = std::make_unique<PenaltyContactEnforcement>(
+                M_params.contact.epsilon);
     }
 
     void
     ContactProblem::init()
     {
-        // std::cout << "Inside ConstactProblem::init()" << std::endl;
-        // std::cout << M_params.numerics.FEMTypeRhs << std::endl;
 
         M_BC.readBC(M_params.datafile);
 
@@ -28,8 +31,7 @@ namespace gf{
         getfem::pintegration_method ppi = getfem::int_method_descriptor(M_params.numerics.integration);
         size_type N = M_params.domain.dim;
         M_integrationMethod.set_integration_method(M_mesh.get().convex_index(), ppi);
-        // M_imData.set_tensor_size(bgeot::multi_index(N,N)); /** \todo */
-
+    
     }
 
 
@@ -57,8 +59,6 @@ namespace gf{
         
         M_model.add_initialized_scalar_data("lambda", M_params.physics.M_lambda);
         M_model.add_initialized_scalar_data("mu", M_params.physics.M_mu);
-        M_model.add_initialized_scalar_data("gammaN", 10*M_params.physics.M_E0/M_params.domain.h);
-        M_model.add_initialized_scalar_data("theta", M_params.nitsche.theta);  // symmetric variant
         M_model.add_initialized_scalar_data("mu_fric", M_params.physics.M_mu_friction);
         
         std::cout << "done.\n";
@@ -105,81 +105,83 @@ namespace gf{
         M_model.add_macro("sig_v_t1", "traction_v . t1");
         M_model.add_macro("sig_v_t2", "traction_v . t2");
 
-        // Normal gap and stress
-        M_model.add_macro("Pn_u", "(gammaN * un_jump - sig_u_nL)");
-        M_model.add_macro("Pt1_u", "(gammaN * ut1_jump - sig_u_t1)");
-        M_model.add_macro("Pt2_u", "(gammaN * ut2_jump - sig_u_t2)");
-        M_model.add_macro("Pn_v_theta", "(gammaN * vn_jump - theta*sig_v_nL)");
-        M_model.add_macro("Pt1_v_theta", "(gammaN * vt1_jump - theta*sig_v_t1)");
-        M_model.add_macro("Pt2_v_theta", "(gammaN * vt2_jump - theta*sig_v_t2)");
+        // M_model.add_initialized_scalar_data("gammaN", M_params.contact.gamma0);
+        // M_model.add_initialized_scalar_data("theta", M_params.contact.theta);  // symmetric variant
         
-        // Friction threshold
-        M_model.add_macro("Sh", "mu_fric * pos_part(Pn_u)");
-        M_model.add_macro("norm_Pt", "sqrt(Pt1_u*Pt1_u + Pt2_u*Pt2_u)");
-        M_model.add_macro("proj_Pt1_u", "Pt1_u * min(1, Sh / (norm_Pt + eps))");
-        M_model.add_macro("proj_Pt2_u", "Pt2_u * min(1, Sh / (norm_Pt + eps))");
+        // // Normal gap and stress
+        // M_model.add_macro("Pn_u", "(gammaN * un_jump - sig_u_nL)");
+        // M_model.add_macro("Pt1_u", "(gammaN * ut1_jump - sig_u_t1)");
+        // M_model.add_macro("Pt2_u", "(gammaN * ut2_jump - sig_u_t2)");
+        // M_model.add_macro("Pn_v_theta", "(gammaN * vn_jump - theta*sig_v_nL)");
+        // M_model.add_macro("Pt1_v_theta", "(gammaN * vt1_jump - theta*sig_v_t1)");
+        // M_model.add_macro("Pt2_v_theta", "(gammaN * vt2_jump - theta*sig_v_t2)");
+        
+        // // Friction threshold
+        // M_model.add_macro("Sh", "mu_fric * pos_part(Pn_u)");
+        // M_model.add_macro("norm_Pt", "sqrt(Pt1_u*Pt1_u + Pt2_u*Pt2_u)");
+        // M_model.add_macro("proj_Pt1_u", "Pt1_u * min(1, Sh / (norm_Pt + eps))");
+        // M_model.add_macro("proj_Pt2_u", "Pt2_u * min(1, Sh / (norm_Pt + eps))");
 
-        std::cout << "done.\n";
+        // std::cout << "done.\n";
 
+        // Enforcement of contact conditions
+        M_contactEnforcement->enforce(M_model, M_integrationMethod);
 
         // Add isotropic elasticity bricks
         std::cout << "  Adding elasticity bricks...";
-        
         getfem::add_isotropic_linearized_elasticity_brick(
             M_model, M_integrationMethod, "uL", "lambda", "mu", RegionType::BulkLeft);
         getfem::add_isotropic_linearized_elasticity_brick(
             M_model, M_integrationMethod, "uR", "lambda", "mu", RegionType::BulkRight);
+        std::cout << "done.\n";
+
+        // // Add linear stress brick
+        // std::cout << "  Adding linear stress brick...";
+
+        // getfem::add_linear_term(
+        //     M_model,
+        //     M_integrationMethod,
+        //     "- theta/gammaN * sig_u_nL * sig_v_nL", /** expression */
+        //     Fault, /** region */
+        //     false, /** symmetric */
+        //     false, /** coercive */
+        //     "linear_stress",
+        //     false /** check */
+        // );
+
+        // std::cout << "done.\n";
+
+
+        // // Add KKT condition brick
+        // std::cout << "  Adding KKT condition brick...";
+
+        // getfem::add_nonlinear_term(
+        //     M_model,
+        //     M_integrationMethod,
+        //     "1/gammaN * pos_part(Pn_u) * Pn_v_theta",
+        //     Fault,
+        //     false,
+        //     false,
+        //     "KKTbrick"
+        // );
+
+        // std::cout << "done.\n";
+
+
+        // // Add Coulomb condition brick
+        // std::cout << "  Adding Coulomb friction brick...";
         
-        std::cout << "done.\n";
-
-
-        // Add linear stress brick
-        std::cout << "  Adding linear stress brick...";
-
-        getfem::add_linear_term(
-            M_model,
-            M_integrationMethod,
-            "- theta/gammaN * sig_u_nL * sig_v_nL", /** expression */
-            Fault, /** region */
-            false, /** symmetric */
-            false, /** coercive */
-            "linear_stress",
-            false /** check */
-        );
-
-        std::cout << "done.\n";
-
-
-        // Add KKT condition brick
-        std::cout << "  Adding KKT condition brick...";
-
-        getfem::add_nonlinear_term(
-            M_model,
-            M_integrationMethod,
-            "1/gammaN * pos_part(Pn_u) * Pn_v_theta",
-            Fault,
-            false,
-            false,
-            "KKTbrick"
-        );
-
-        std::cout << "done.\n";
-
-
-        // Add Coulomb condition brick
-        std::cout << "  Adding Coulomb friction brick...";
+        // getfem::add_nonlinear_term(
+        //     M_model,
+        //     M_integrationMethod,
+        //     "(1/gammaN) * (proj_Pt1_u * Pt1_v_theta + proj_Pt2_u * Pt2_v_theta)",
+        //     Fault,
+        //     false,
+        //     false,
+        //     "CoulombBrick"
+        // );
         
-        getfem::add_nonlinear_term(
-            M_model,
-            M_integrationMethod,
-            "(1/gammaN) * (proj_Pt1_u * Pt1_v_theta + proj_Pt2_u * Pt2_v_theta)",
-            Fault,
-            false,
-            false,
-            "CoulombBrick"
-        );
-        
-        std::cout << "done.\n";
+        // std::cout << "done.\n";
 
 
         getfem::add_nonlinear_term(
@@ -204,7 +206,7 @@ namespace gf{
         
         // Volumic source term (gravity)
         std::cout << "  Adding volumic source term brick...";
-        
+
         plain_vector G(M_FEM.mf_rhs().nb_dof()*dim);
 
         for (size_type i = 0; i < nb_dof_rhs; ++i)
@@ -398,7 +400,7 @@ namespace gf{
         std::cout << "done." << std::endl;
 
         // Custom export to VTK
-        std::cout << "Exporting results to result_" << i << ".vtk..." << std::endl;
+        std::cout << "Exporting results to result_" << i << ".vtk...";
 
         scalar_type offset = 1e-5; // offset for visualization
 

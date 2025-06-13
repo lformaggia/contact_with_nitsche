@@ -51,8 +51,10 @@ namespace gf {
         it.rtol = datafile("it/tol", 1e-6);
         it.atol = datafile("it/atol", 0.); // atol: not in file, default to 0
         
-        nitsche.theta = datafile("it/theta", 0.0);
-        nitsche.gamma0 = datafile("it/gamma", 10.0);
+        contact.method = datafile("contact/method", "nitsche");
+        contact.theta = datafile("contact/theta", 0.0);
+        contact.gamma0 = datafile("contact/gamma", 10.0)*physics.M_E0/domain.h; // gamma0 = 10*E/h
+        contact.epsilon = datafile("contact/epsilon", 1.e5);
 
         time.t0 = datafile("time/t0", 0.0);
         time.tend = datafile("time/tend", 1.0);
@@ -102,9 +104,16 @@ namespace gf {
         os << "--maxit = " << p.it.maxIt << "\n";
         os << "--rtol = " << p.it.rtol << "\n";
         os << "--atol = " << p.it.atol << "\n";
-        os << "NITSCHE:\n";
-        os << "--theta = " << p.nitsche.theta << "\n";
-        os << "--gamma0 = " << p.nitsche.gamma0 << "\n";
+        os << "CONTACT: using "<< p.contact.method << " method\n";
+        if (p.contact.method == "penalty") {
+            os << "--epsilon = " << p.contact.epsilon << "\n";
+        } else if (p.contact.method == "nitsche") {
+            os << "--theta = " << p.contact.theta << "\n";
+            os << "--gamma0 = " << p.contact.gamma0 << "\n";
+        } // add other cases if needed
+        else {
+            throw std::runtime_error("Unsupported contact method: " + p.contact.method);
+        }
         os << "TIME:\n";
         os << "--t0 = " << p.time.t0 << "\n";
         os << "--tend = " << p.time.tend << "\n";

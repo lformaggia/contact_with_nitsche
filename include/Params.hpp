@@ -34,9 +34,11 @@ namespace gf {
          * add other Newton Params, if needed
          */
     };
-    struct Nitsche {
+    struct Contact {
+        std::string method;
         scalar_type theta;
         scalar_type gamma0;
+        scalar_type epsilon;
     };
     struct Numerics {
         std::string integration;
@@ -58,7 +60,7 @@ namespace gf {
         Domain domain;
         Physics physics;
         It it;
-        Nitsche nitsche;
+        Contact contact;
         Time time;
         Numerics numerics;
         bool verbose = false;

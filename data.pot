@@ -1,10 +1,10 @@
 [domain]
-angle = 2                      % Inclination degree (ignored if the mesh is built-in)
+angle = -2                      % Inclination degree (ignored if the mesh is built-in)
 Lx = 1                          % Lenght of domain side along x
 Ly = 2                          % Lenght of domain side along y
 Lz = 2                          % Lenght of domain side along z
 h = 0.25                        % Grid spacing
-meshType = GT_QK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK(3,1) for tetrahedron
+meshType = GT_PK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK(3,1) for tetrahedron
 [../]
 
 [physics]
@@ -31,15 +31,20 @@ bdDispN3 = 0.
 
 regionLoad = [7,10]             % Neumann bd regions
 bdLoad1 = {0,0,-t}
-bdLoad2 = {-4,0,0}
+bdLoad2 = {-3,0,0}
 [../]
 
 [it]
 tol = 1.0e-14                   % Tolerance for contact
 maxit = 50                      % Maximum number of iteration
-atol = 1.0e-13
+atol = 1.0e-12
+[../]
+
+[contact]
+method = penalty                % nitsche penalty
 theta = 1                       % +1 0 -1 Nitsche 
 gamma = 10                      % Nitsche parameter
+epsilon = 1.0e5                  % Penalty parameter
 [../]
 
 [time]

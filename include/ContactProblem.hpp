@@ -6,6 +6,7 @@
 #include "Mesh.hpp"
 #include "BCHandler.hpp"
 #include "FEMManager.hpp"
+#include "ContactEnforcementStrategy.hpp"
 #include "GetPot"
 
 namespace gf{
@@ -43,10 +44,6 @@ namespace gf{
          */
         void solve();
 
-        // /**
-        //  * @brief Export vtk results for visualization
-        //  */
-        // void exportResults() const;
         
     private:
 
@@ -54,17 +51,20 @@ namespace gf{
         const Mesh& M_mesh; ///< The mesh
         BCHandler M_BC; ///< Class that stores BC information
         FEMManager M_FEM; ///< Stores the getfem::mesh_fem objects
+        std::unique_ptr<ContactEnforcementStrategy> M_contactEnforcement; ///< Strategy for contact enforcement
         getfem::mesh_im M_integrationMethod; ///< Integration methods
-        getfem::mesh_im M_integrationMethodSurface; ///< Integration method for 2D integrals
         getfem::im_data M_imData;
         getfem::model M_model;
-        // SolType M_U; ///< Vector to store the solution 
-        // StressType M_stress; ///< Vector that stores the stress information
 
+        /**
+         * @brief Export vtk results for visualization
+         */
         void exportVtk(size_type i);
 
 
+
     };
+
 
 }
 

@@ -6,7 +6,6 @@ The project aims to solve a contact mechanics problem using a Nitsche-based meth
 The FEM framework is given by GetFEM++, a very powerful library for solving many FEM problems. In order to compile and execute the code, the user will need the following libraries installed:
 - getfem
 - mumps (sequential version): for the linear algebra procedures
-- qhull: for the mesh generation of getfem
 
 The mesh can be built either internally to getfem (using qhull) or by using gmsh and giving the option `-m` at runtime (in such a case, gmsh needs to be installed). The user has just to modify the data.pot file properly.
 
@@ -27,9 +26,9 @@ A struct holding all the parameters contained in `data.pot`.
 - region< type > = [1 4 5]: Dirichlet is imposed on boundary regions with tags 1,4 and 5
 - bd< type >< i > = {x[1]+sqrt(x[0]),x[2],3.5*t^2}: the < type > to be imposed on the i-th region given in region< type >
 
-`ContactProblem`: the main class handling the problem. It implements methods to:
+`ContactProblem` and `ContactEnforcementStrategy`: the main class handling the problem. It implements methods to:
 - initialize the problem: set BCs, set FEM, set integration method
-- prepare the assemble: use GFWL of getfem to instruct the solver on how to assemble the matrices at each iteration
+- prepare the assemble: use GFWL of getfem to instruct the solver on how to assemble the matrices at each iteration, choosing the method through a strategy pattern
 - solve the problem: implements the time-advancing scheme and calls `getfem::standard_solve(...)`, which has already Netwon-like solver implemented and optimally chooses the best solver depending on the information given in the `assemble()` method.
 - export the solution in `vtk` format.
 
@@ -47,4 +46,5 @@ with possible options:
   - `-m`: generate the mesh with gmsh
   - `-f <filename>`: to give a different filename (`data.pot` by default).
 
-Notice that if the mesh isn't generated using gmsh, the angle parameter will be ignored
+Notice that if the mesh isn't generated using gmsh, the angle parameter will be ignored.
+Depending on the method choosen, only the relative numerical parameters will be used.

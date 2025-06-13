@@ -1,6 +1,6 @@
 #include "MeshBuilder.hpp"
 
-bool DEBUGIR = true;
+bool DEBUGIR = false;
 namespace gf {
 
     void
@@ -21,10 +21,8 @@ namespace gf {
 
         auto pgt = bgeot::geometric_trans_descriptor(meshType);
 
-        if (true){
-            auto pbDim = pgt->dim();
-            assert(N==pbDim);
-        }
+        auto pbDim = pgt->dim();
+        assert(N==pbDim);
 
         std::vector<size_type> nsubdiv(N);
         std::vector<scalar_type> lengths(N);
@@ -39,7 +37,6 @@ namespace gf {
         getfem::regular_unit_mesh(mesh, nsubdiv, pgt);
 
         // transform the mesh (scale the unit mesh to [M_domain.Lx, M_domain.Ly, M_domain.Lz])
-        //!\todo: maybe I also need to translate it, I want the fault to be positioned in x=0
         bgeot::base_matrix M(N,N);
         for (size_type i = 0; i < N; ++i)
             M(i,i) = lengths[i];
@@ -48,8 +45,6 @@ namespace gf {
         base_small_vector v {-0.5*M_domain.Lx,0.,0.};
         mesh.translation(v);
         std::cout << "done.\n";
-
-        //!\todo: need to be sure that i can build the fracture according to the normal ...
 
     }
 
@@ -71,17 +66,9 @@ namespace gf {
 
             // get the coords of the points of convex i
             auto local_points = mesh.points_of_convex(i);
-            
-            if (DEBUGIR){
-                // std::clog << "Element: " << i << std::endl;
-                // std::clog << "--Points\n";
-            }
 
             // loop over the points of a convex
             for (const auto &pt: local_points){
-                if (DEBUGIR)
-                    // std::clog <<"["<<pt[0]<<","<<pt[1]<<","<<pt[2]<<"]\n";
-                
                 if (pt[0] < -1e-6 && !insertedLeft){ // if one point has x < 0 --> left bulk region
                     leftConvexesList.add(i);
                     insertedLeft = true;
@@ -91,12 +78,6 @@ namespace gf {
                     insertedRight = true;
                 }
                 if (std::abs(pt[0]) < 1.e-6 && !insertedCentered){
-                    if (DEBUGIR) {
-                        // std::clog << "Adding an element in Fault convexList: "
-                        // << "pt[0] = " << pt[0]
-                        // << ", abs(pt[0]) = " << std::abs(pt[0]) << " < 1.e-6? "
-                        // << std::boolalpha << (std::abs(pt[0]) < 1.e-6) << std::endl;
-                    }
                     centeredConvexesList.add(i);
                     insertedCentered = true;
                 }
@@ -240,11 +221,12 @@ namespace gf {
         RegMap regmap;
         getfem::import_mesh_gmsh("fractured_mesh.msh", mesh, regmap);
 
-        std::cout << regmap.size() << "\n";
-        for (RegMap::iterator i = regmap.begin(); i != regmap.end(); i++) {
-            std::cout << i->first << " " << i->second << "\n";
-        }
-        std::cout << "done." << std::endl;
+        /** @DEBUG: print the region map **/
+        // std::cout << regmap.size() << "\n";
+        // for (RegMap::iterator i = regmap.begin(); i != regmap.end(); i++) {
+        //     std::cout << i->first << " " << i->second << "\n";
+        // }
+        // std::cout << "done." << std::endl;
     }
 
     void
@@ -257,13 +239,9 @@ namespace gf {
         const getfem::mesh_region &bulk_region = mesh.region(BulkRight);
 
         // Loop through (convex, face) pairs
-        // std::clog << "Faces in region Fault (convex, face): ";
         for (getfem::mr_visitor it(fault_region); !it.finished(); ++it) {
-            if (bulk_region.is_in(it.cv())){
-                // std::cout << "Removing (" << it.cv() << "," << it.f() << ")...";
+            if (bulk_region.is_in(it.cv()))
                 fault_region.sup(it.cv(),it.f());
-            }
-            // std::cout << "done." << std::endl;
         }
 
         std::cout << "done." << std::endl;
