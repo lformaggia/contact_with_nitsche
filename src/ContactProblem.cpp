@@ -89,6 +89,13 @@ namespace gf{
         M_model.add_macro("vt1_jump", "v_jump . t1");
         M_model.add_macro("vt2_jump", "v_jump . t2");
 
+        
+        M_model.add_macro("stressL","(lambda*Trace(Grad_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_uL))");
+        M_model.add_macro("stressR","(lambda*Trace(Grad_uR)*Id(qdim(uR)) + 2*mu*Sym(Grad_uR))");
+        M_model.add_macro("stressL_voigt", "[stressL(1,1), stressL(2,2), stressL(3,3), 2*stressL(2,3), 2*stressL(1,3), 2*stressL(1,2)]");
+        M_model.add_macro("stressR_voigt", "[stressR(1,1), stressR(2,2), stressR(3,3), 2*stressR(2,3), 2*stressR(1,3), 2*stressR(1,2)]");
+
+        
         M_model.add_macro("traction_u", "((lambda*Trace(Grad_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_uL)) * n)");
         M_model.add_macro("traction_v", "((lambda*Trace(Grad_Test_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_Test_uL)) * n)");
         M_model.add_macro("sig_u_nL", "traction_u . n");
@@ -300,6 +307,8 @@ namespace gf{
         dim_type dim = M_mesh.get().dim();
         size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
         plain_vector F(nb_dof_rhs*dim);
+        
+        plain_vector VM(M_FEM.mf_stress().nb_dof());
 
         // Time loop
         size_type n_timesteps = static_cast<size_type>(M_params.time.tend - M_params.time.t0)/M_params.time.dt;
@@ -319,15 +328,14 @@ namespace gf{
                 gmm::copy(F, M_model.set_real_variable(bc->name()));
             }
 
-            // Setup parallel solver — choose one of:
-            // getfem::default_linear_solver("mumps")
-            // getfem::default_linear_solver("petsc")
-            // M_model.set_linear_solver(getfem::default_linear_solver("mumps"));
-            // M_model.set_linear_solver(getfem::default_linear_solver("petsc")); // alternative
-
             // Solve the problem
             gmm::iteration iter(M_params.it.atol, 1, M_params.it.maxIt);
             getfem::standard_solve(M_model,iter);
+            if (iter.converged()) {
+                std::cout << "  Iteration converged after " << iter.get_iteration() << " iterations." << std::endl;
+            } else {
+                std::cerr << " Warning: Iteration did not converge after " << iter.get_iteration() << " iterations." << std::endl;
+            }
 
             // Export results
             exportVtk(i);
@@ -343,6 +351,82 @@ namespace gf{
 
         dim_type dim = M_mesh.get().dim();
 
+        // Zero out the noised components
+        plain_vector uL_backup = M_model.real_variable("uL");
+        plain_vector uR_backup = M_model.real_variable("uR");
+
+        plain_vector &uL = M_model.set_real_variable("uL");
+        plain_vector &uR = M_model.set_real_variable("uR");
+
+        auto dofsL = M_FEM.mf_u1().dof_on_region(M_mesh.region(BulkLeft));
+        auto dofsR = M_FEM.mf_u2().dof_on_region(M_mesh.region(BulkRight));
+        auto dofsF = dofsL & dofsR; // shared dofs on the fault
+        dofsL.setminus(dofsF);
+        dofsR.setminus(dofsF);
+
+        for (dal::bv_visitor i(dofsL); !i.finished(); ++i)
+            uR[i] = 0.0;
+        for (dal::bv_visitor j(dofsR); !j.finished(); ++j)
+            uL[j] = 0.0;
+
+        M_FEM.mf_stress().set_qdim(3,3); // Voigt: [Sxx, Syy, Szz, Syz, Sxz, Sxy]
+        
+        // Post-process stress
+        std::cout << "Computing stress...";
+
+        plain_vector VL(M_FEM.mf_stress().nb_dof());
+        plain_vector VR(M_FEM.mf_stress().nb_dof());
+        
+        getfem::ga_interpolation_Lagrange_fem(M_model, "stressL", M_FEM.mf_stress(), VL);
+        getfem::ga_interpolation_Lagrange_fem(M_model, "stressR", M_FEM.mf_stress(), VR);
+
+        dofsL = M_FEM.mf_stress().dof_on_region(M_mesh.region(BulkLeft));
+        dofsR = M_FEM.mf_stress().dof_on_region(M_mesh.region(BulkRight));
+        dofsF = dofsL & dofsR; // shared dofs on the fault
+        dofsL.setminus(dofsF);
+        dofsR.setminus(dofsF);
+
+        for (dal::bv_visitor i(dofsL); !i.finished(); ++i)
+            VR[i] = 0.0;
+        for (dal::bv_visitor j(dofsR); !j.finished(); ++j)
+            VL[j] = 0.0;
+
+        std::cout << "done." << std::endl;
+
+        getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
+        exp.exporting(M_FEM.mf_u1());
+        exp.write_mesh();
+        exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
+        exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
+
+        gmm::clean(VL, 1E-20);
+        exp.exporting(M_FEM.mf_stress());
+        exp.write_point_data(M_FEM.mf_stress(), VL, "stressL");
+
+        gmm::clean(VR, 1E-20);
+        exp.exporting(M_FEM.mf_stress());
+        exp.write_point_data(M_FEM.mf_stress(), VR, "stressR");
+
+        M_model.set_real_variable("uL") = uL_backup;
+        M_model.set_real_variable("uR") = uR_backup;
+
+            // Alternatively, export in Voigt notation
+                // size_type voigt_dim = (dim == 2) ? 3 : 6;
+                // M_FEM.mf_stress().set_qdim(voigt_dim);
+
+                // plain_vector VL(M_FEM.mf_stress().nb_dof());
+                // plain_vector VR(M_FEM.mf_stress().nb_dof());
+
+                // getfem::ga_interpolation_Lagrange_fem(M_model, "stressL_voigt", M_FEM.mf_stress(), VL);
+                // getfem::ga_interpolation_Lagrange_fem(M_model, "stressR_voigt", M_FEM.mf_stress(), VR);
+
+
+        std::cout << "Exported results to result_" << i << ".vtk" << std::endl;
+
+
+
+        // CUSTOM EXPORT
+        
         // const plain_vector& uL = M_model.real_variable("uL");
         // const plain_vector& uR = M_model.real_variable("uR");
 
@@ -498,12 +582,6 @@ namespace gf{
         // exp.exporting(M_FEM.mf_u1());
         // exp.write_mesh();
         // exp.write_point_data(M_FEM.mf_u1(), U, "u");
-
-        getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
-        exp.exporting(M_FEM.mf_u1());
-        exp.write_mesh();
-        exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
-        exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
 
     }
 

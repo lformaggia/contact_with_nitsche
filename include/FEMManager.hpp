@@ -24,9 +24,7 @@ namespace gf {
 
         getfem::mesh_fem& mf_u2() { return M_mfU2; }
         
-        getfem::mesh_fem& mf_stress1() { return M_mfStress1; }
-        
-        getfem::mesh_fem& mf_stress2() { return M_mfStress2; }
+        getfem::mesh_fem& mf_stress() { return M_mfStress; }
 
         getfem::mesh_fem& mf_rhs() { return M_mfRhs; }
 
@@ -37,8 +35,7 @@ namespace gf {
     private:
         getfem::mesh_fem M_mfU1;
         getfem::mesh_fem M_mfU2;
-        getfem::mesh_fem M_mfStress1;
-        getfem::mesh_fem M_mfStress2;
+        getfem::mesh_fem M_mfStress;
         getfem::mesh_fem M_mfRhs;
         getfem::mesh_fem M_mfCoeff;
 

@@ -5,7 +5,7 @@ namespace gf {
 
     FEMManager::FEMManager(const getfem::mesh& mesh)
         : M_mfU1(mesh, mesh.dim()), M_mfU2(mesh, mesh.dim()),
-        M_mfStress1(mesh), M_mfStress2(mesh),
+        M_mfStress(mesh),
         M_mfRhs(mesh) {
         }
 
@@ -26,8 +26,8 @@ namespace gf {
 
         M_mfU1.set_finite_element(pfU);
         M_mfU2.set_finite_element(pfU);
-        M_mfStress1.set_qdim(3,3);
-        M_mfStress2.set_qdim(3,3);
+        M_mfStress.set_finite_element(pfStress);
+        // M_mfStress.set_qdim(3,3);
         M_mfRhs.set_finite_element(pfRhs);
 
         std::cout << "done." << std::endl;
