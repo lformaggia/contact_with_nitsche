@@ -54,9 +54,3 @@ foreach(EXAMPLE ${EXAMPLES})
 endforeach()
 
 message(STATUS "Running clean_all.cmake")
-
-# file(REMOVE_RECURSE "${PROJECT_ROOT}/build")
-# message(STATUS "Removed build directory")
-
-# file(REMOVE_RECURSE "${PROJECT_ROOT}/lib")
-# message(STATUS "Removed lib directory")
