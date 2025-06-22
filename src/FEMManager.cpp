@@ -4,31 +4,26 @@ bool DEBUGFEM = true;
 namespace gf {
 
     FEMManager::FEMManager(const getfem::mesh& mesh)
-        : M_mfU1(mesh, mesh.dim()), M_mfU2(mesh, mesh.dim()),
+        : M_mfU(mesh, mesh.dim()),
         M_mfStress(mesh),
-        M_mfRhs(mesh) {
+        M_mfRhs(mesh),
+        M_mfLM(mesh) {
         }
 
     void FEMManager::setMeshFem(const Numerics &n, const getfem::mesh& mesh){
         
         std::cout << "Setting Finite Element... ";
 
-        // /** \DEBUG: */
-        // std::cout << "FEMtypeDisp: " << n.FEMTypeDisplacement << std::endl;
-        // std::cout << "FEMtypeStress: " << n.FEMTypeStress << std::endl;
-        // std::cout << "FEMtypeRhs: " << n.FEMTypeRhs << std::endl;
-        // /** \end debug */
-
-
         getfem::pfem pfU = getfem::fem_descriptor(n.FEMTypeDisplacement);
         getfem::pfem pfStress = getfem::fem_descriptor(n.FEMTypeStress);
         getfem::pfem pfRhs = getfem::fem_descriptor(n.FEMTypeRhs);
+        getfem::pfem pfLM = getfem::fem_descriptor(n.FEMTypeLM); // Linear multipliers
 
-        M_mfU1.set_finite_element(pfU);
-        M_mfU2.set_finite_element(pfU);
+        M_mfU.set_finite_element(pfU);
         M_mfStress.set_finite_element(pfStress);
-        // M_mfStress.set_qdim(3,3);
+        M_mfStress.set_qdim(3,3);
         M_mfRhs.set_finite_element(pfRhs);
+        M_mfLM.set_finite_element(pfLM);
 
         std::cout << "done." << std::endl;
 

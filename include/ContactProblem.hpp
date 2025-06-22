@@ -53,7 +53,6 @@ namespace gf{
         FEMManager M_FEM; ///< Stores the getfem::mesh_fem objects
         std::unique_ptr<ContactEnforcementStrategy> M_contactEnforcement; ///< Strategy for contact enforcement
         getfem::mesh_im M_integrationMethod; ///< Integration methods
-        getfem::im_data M_imData;
         getfem::model M_model;
 
         /**

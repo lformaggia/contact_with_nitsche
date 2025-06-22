@@ -38,6 +38,7 @@ namespace gf {
         std::string method;
         scalar_type theta;
         scalar_type gamma0;
+        scalar_type gammaL;
         scalar_type epsilon;
     };
     struct Numerics {
@@ -45,6 +46,7 @@ namespace gf {
         std::string FEMTypeDisplacement;
         std::string FEMTypeStress;
         std::string FEMTypeRhs;
+        std::string FEMTypeLM;
     }; 
     struct Time {
         scalar_type t0;

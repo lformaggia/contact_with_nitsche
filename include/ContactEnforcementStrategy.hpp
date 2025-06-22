@@ -68,6 +68,28 @@ namespace gf {
     };
 
 
+    /**
+     * @brief Augmented Lagrangian contact enforcement strategy.
+     * This class implements the Augmented Lagrangian method for enforcing contact conditions.
+     * It uses a parameter gammaL to control the enforcement strength.
+     */
+    class AugmentedLagrangianContactEnforcement : public ContactEnforcementStrategy {
+        getfem::mesh_fem& M_mfLM; ///< Mesh finite element for Lagrange multipliers
+        scalar_type M_gammaL; ///< Augmented Lagrangian parameter gammaL
+
+    public:
+        /**
+         * @brief Constructor for the AugmentedLagrangianContactEnforcement class.
+         * @param gammaL Augmented Lagrangian parameter gammaL
+         */
+        AugmentedLagrangianContactEnforcement(scalar_type gammaL, getfem::mesh_fem& mfLM)
+        : M_gammaL(gammaL), M_mfLM(mfLM){}
+
+        void enforce(getfem::model& md, const getfem::mesh_im& im) const override;
+
+    };
+
+
 } // namespace gf
 
 

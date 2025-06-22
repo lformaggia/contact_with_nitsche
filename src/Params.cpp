@@ -66,6 +66,8 @@ namespace gf {
             numerics.FEMTypeDisplacement = "FEM_PK(3,1)";
             numerics.FEMTypeRhs = "FEM_PK(3,1)";
             numerics.FEMTypeStress = "FEM_PK(3,1)";
+            /** \todo Select LBB compliant space for the multiplier or throw an error*/
+            numerics.FEMTypeLM = "FEM_PK_DISCONTINUOUS(3,0)";
         }
         else if (domain.meshType == "GT_QK(3,1)")
         {
@@ -73,6 +75,8 @@ namespace gf {
             numerics.FEMTypeDisplacement = "FEM_QK(3,1)";
             numerics.FEMTypeRhs = "FEM_QK(3,1)";
             numerics.FEMTypeStress = "FEM_QK(3,1)";
+            /** \todo Select LBB compliant space for the multiplier or throw an error*/
+            numerics.FEMTypeLM = "FEM_QK_DISCONTINUOUS(3,0)";
             // std::cout << "Inside Params constructor: numerics.FEMTypeRhs = " << numerics.FEMTypeRhs << std::endl;
         }
         else 
@@ -110,7 +114,9 @@ namespace gf {
         } else if (p.contact.method == "nitsche") {
             os << "--theta = " << p.contact.theta << "\n";
             os << "--gamma0 = " << p.contact.gamma0 << "\n";
-        } // add other cases if needed
+        } else if (p.contact.method == "augLM"){
+            os << "--gammaL = " << p.contact.gammaL << "\n";
+        }
         else {
             throw std::runtime_error("Unsupported contact method: " + p.contact.method);
         }
@@ -123,6 +129,8 @@ namespace gf {
         os << "--FEMTypeDisplacement = " << p.numerics.FEMTypeDisplacement << "\n";
         os << "--FEMTypeStress = " << p.numerics.FEMTypeStress << "\n";
         os << "--FEMTypeRhs = " << p.numerics.FEMTypeRhs << "\n";
+        if (p.contact.method == "augLM")
+            os << "--FEMTypeLM = " << p.numerics.FEMTypeLM << "\n";
         os << "\nVERBOSE: " << (p.verbose ? "true" : "false") << "\n";
         os << "GMSH: " << (p.gmsh ? "true" : "false") << "\n";
         os << "============================================\n";

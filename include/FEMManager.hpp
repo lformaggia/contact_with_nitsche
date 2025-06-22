@@ -20,24 +20,19 @@ namespace gf {
     
         void setMeshFem(const Numerics& n, const getfem::mesh&);
 
-        getfem::mesh_fem& mf_u1() { return M_mfU1; }
-
-        getfem::mesh_fem& mf_u2() { return M_mfU2; }
+        getfem::mesh_fem& mf_u() { return M_mfU; }
         
         getfem::mesh_fem& mf_stress() { return M_mfStress; }
 
         getfem::mesh_fem& mf_rhs() { return M_mfRhs; }
 
-        getfem::mesh_fem& mf_coeff() { return M_mfCoeff; }
-
-        
+        getfem::mesh_fem& mf_LM() { return M_mfLM; }
 
     private:
-        getfem::mesh_fem M_mfU1;
-        getfem::mesh_fem M_mfU2;
+        getfem::mesh_fem M_mfU;
         getfem::mesh_fem M_mfStress;
         getfem::mesh_fem M_mfRhs;
-        getfem::mesh_fem M_mfCoeff;
+        getfem::mesh_fem M_mfLM;
 
     };
 

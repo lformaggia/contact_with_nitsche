@@ -7,9 +7,9 @@ The FEM framework is given by GetFEM++, a very powerful library for solving many
 - getfem
 - mumps (sequential version): for the linear algebra procedures
 
-The mesh can be built either internally to getfem (using qhull) or by using gmsh and giving the option `-m` at runtime (in such a case, gmsh needs to be installed). The user has just to modify the data.pot file properly.
+The mesh can be built either internally to getfem or by using gmsh and giving the option `-m` at runtime (in such a case, gmsh needs to be installed). The user has just to modify the data.pot file properly.
 
-The `src` and `include` directories contain the code, `external` just contains a copy of muparserx (which is used to read functions form the .pot file), while the `build` directoy is used to store object and dependency files built when the code gets compiled.
+The `src` and `include` directories contain the code, `external` just contains a copy of muparserx (which is used to read functions form the .pot file), while the `examples` directory contains some tests and the folder where the user should work.
 
 ### Source code
 The main implemented classes are:
@@ -34,17 +34,50 @@ A struct holding all the parameters contained in `data.pot`.
 
 
 ## Notes for compiling the code
-In the Makefile, if you have the aforementioned libraries installed in non-standard paths, you need to add them in `CPPFLAGS`, then simply run `make`.
+Before compiling the code, make sure you have the getfem (sequential version, static library) and mumps (sequential version, static library) installed. In order to avoid conflicts between uncompatible versions of some libraries, ensure that you have no modules loaded, otherwise just run
+```bash
+module purge
+```
 
-## Optional runtime flags
-Input data can be changed at runtime modifying `data.pot`. To run the executable type 
+TODO: Give information on how to install those libraries
+
+
+To compile the code, in the current repository run
+```bash
+cmake -B build
+```
+with possible options (all defaulted to OFF):
+- `-DEXAMPLES_VERBOSE=ON`: to be verbose when testing the examples
+- `-DEXAMPLES_USE_GMSH=ON`: to run the examples using a mesh generated via gmsh
+
+and then run:
+```bash
+cmake --build build -j<nprocs>
+```
+
+This will build muparserx library and install a shared version that the code links againts, build a static library `libmycontactlib.a`, which is used by the executable, and create the executable. Notice that the executable is stored in the `./build/bin/` directory and then a symbolic link (or a copy if the system is on non-Unix type) is created in each `./examples/<example>` folder.
+
+If you want to run the examples for testing the code, optionally run
+```bash
+cd build && ctest --output-on-failure
+```
+This will run all the predefined examples, printing the ouput of execution in a `execution_log.txt` file and the vtk files for visualization in its `output/` subfolder
+
+To clean the code, the following target has been defined (from the root of the project):
+```bash
+cmake --build build --target clean-all
+```
+This will remove the `build/` and `lib/` directory, together with the output of the execution of the examples if `ctest` has been runned.
+
+
+## Run the code
+The user interfaces with the code just by modifying the getpot datafile in the `./examples/user/` directory. To execute the code the user just needs to run
 ```bash
 ./main
 ```
 with possible options:
   - `-v`: be verbose
   - `-m`: generate the mesh with gmsh
-  - `-f <filename>`: to give a different filename (`data.pot` by default).
 
 Notice that if the mesh isn't generated using gmsh, the angle parameter will be ignored.
 Depending on the method choosen, only the relative numerical parameters will be used.

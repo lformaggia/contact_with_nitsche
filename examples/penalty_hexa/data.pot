@@ -1,0 +1,55 @@
+[domain]
+angle = 2                      % Inclination degree (ignored if the mesh is built-in)
+Lx = 1                          % Lenght of domain side along x
+Ly = 2                          % Lenght of domain side along y
+Lz = 2                          % Lenght of domain side along z
+h = 0.25                        % Grid spacing
+meshType = GT_QK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK(3,1) for tetrahedron
+[../]
+
+[physics]
+E = 25000                       % Young modulus
+nu = 0.25                       % Poisson ratio
+bulkLoad = [0.,0.,-0.]          % Gravity
+mu_friction = 0.4               % Friction coefficient
+
+regionDisp = [1,5]              % Dirichlet bd regions
+bdDisp1 = {0.,0.,0.}
+bdDisp2 = {0.,0.,0.}
+bdDisp3 = {0.,0.,0.}
+bdDisp4 = {0.,0.,0.}
+bdDisp5 = {0.,0.,0.}
+bdDisp6 = {0.,0.,0.}
+bdDisp7 = {0.,0.,0.}
+bdDisp8 = {0.,0.,0.}
+bdDisp9 = {0.,0.,0.}
+
+regionDispNormal = [9]          % Normal Dirichlet bd regions
+bdDispN1 = 0.
+bdDispN2 = 0.
+bdDispN3 = 0.
+
+regionLoad = [7,10]             % Neumann bd regions
+bdLoad1 = {0,0,-t}
+bdLoad2 = {-3,0,0}
+[../]
+
+[it]
+tol = 1.0e-14                   % Tolerance for contact
+maxit = 50                      % Maximum number of iteration
+atol = 1.0e-12
+[../]
+
+[contact]
+method = penalty                % nitsche penalty
+theta = 1                       % +1 0 -1 Nitsche 
+gamma = 10                      % Nitsche parameter
+epsilon = 1.0e5                 % Penalty parameter
+gammaL = 100                    % augmented Lagrange parameter
+[../]
+
+[time]
+t0 = 0.0                       % Starting time
+tend = 10.5                       % Ending time
+dt = 0.5                       % Timestep
+[../]

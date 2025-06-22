@@ -1,5 +1,7 @@
-/external/
-/build/
+/build/*/
+/build/*
+/lib/*/
+/lib/*
 *.o
 *.d
 *.log

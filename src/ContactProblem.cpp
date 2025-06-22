@@ -9,15 +9,8 @@ namespace gf{
     M_params(p),
     M_BC(m.get()),
     M_FEM(m.get()),
-    M_integrationMethod(m.get()),
-    M_imData(M_integrationMethod)
+    M_integrationMethod(m.get())
     {
-        if (M_params.contact.method == "nitsche")
-            M_contactEnforcement = std::make_unique<NitscheContactEnforcement>(
-                M_params.contact.theta, M_params.contact.gamma0);
-        else if (M_params.contact.method == "penalty")
-            M_contactEnforcement = std::make_unique<PenaltyContactEnforcement>(
-                M_params.contact.epsilon);
     }
 
     void
@@ -32,7 +25,20 @@ namespace gf{
         size_type N = M_params.domain.dim;
         M_integrationMethod.set_integration_method(M_mesh.get().convex_index(), ppi);
     
-    }
+        // Select the method    
+        if (M_params.contact.method == "nitsche")
+            M_contactEnforcement = std::make_unique<NitscheContactEnforcement>(
+                M_params.contact.theta, M_params.contact.gamma0);
+        else if (M_params.contact.method == "penalty")
+            M_contactEnforcement = std::make_unique<PenaltyContactEnforcement>(
+                M_params.contact.epsilon);
+        else if (M_params.contact.method == "augLM")
+            M_contactEnforcement = std::make_unique<AugmentedLagrangianContactEnforcement>(
+                M_params.contact.gammaL, M_FEM.mf_LM());
+        else
+            throw std::runtime_error("Unknown contact enforcement method: " + M_params.contact.method);
+    
+        }
 
 
     void
@@ -45,11 +51,12 @@ namespace gf{
         dim_type dim = M_mesh.get().dim();
         size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
 
+
         // Main unknown of the problem (displacement)
         std::cout << "  Defining variables...";
         
-        M_model.add_fem_variable("uL", M_FEM.mf_u1());
-        M_model.add_fem_variable("uR", M_FEM.mf_u2());
+        M_model.add_fem_variable("uL", M_FEM.mf_u());
+        M_model.add_fem_variable("uR", M_FEM.mf_u());
         
         std::cout << "done.\n";
 
@@ -105,27 +112,10 @@ namespace gf{
         M_model.add_macro("sig_v_t1", "traction_v . t1");
         M_model.add_macro("sig_v_t2", "traction_v . t2");
 
-        // M_model.add_initialized_scalar_data("gammaN", M_params.contact.gamma0);
-        // M_model.add_initialized_scalar_data("theta", M_params.contact.theta);  // symmetric variant
-        
-        // // Normal gap and stress
-        // M_model.add_macro("Pn_u", "(gammaN * un_jump - sig_u_nL)");
-        // M_model.add_macro("Pt1_u", "(gammaN * ut1_jump - sig_u_t1)");
-        // M_model.add_macro("Pt2_u", "(gammaN * ut2_jump - sig_u_t2)");
-        // M_model.add_macro("Pn_v_theta", "(gammaN * vn_jump - theta*sig_v_nL)");
-        // M_model.add_macro("Pt1_v_theta", "(gammaN * vt1_jump - theta*sig_v_t1)");
-        // M_model.add_macro("Pt2_v_theta", "(gammaN * vt2_jump - theta*sig_v_t2)");
-        
-        // // Friction threshold
-        // M_model.add_macro("Sh", "mu_fric * pos_part(Pn_u)");
-        // M_model.add_macro("norm_Pt", "sqrt(Pt1_u*Pt1_u + Pt2_u*Pt2_u)");
-        // M_model.add_macro("proj_Pt1_u", "Pt1_u * min(1, Sh / (norm_Pt + eps))");
-        // M_model.add_macro("proj_Pt2_u", "Pt2_u * min(1, Sh / (norm_Pt + eps))");
-
-        // std::cout << "done.\n";
 
         // Enforcement of contact conditions
         M_contactEnforcement->enforce(M_model, M_integrationMethod);
+
 
         // Add isotropic elasticity bricks
         std::cout << "  Adding elasticity bricks...";
@@ -134,54 +124,6 @@ namespace gf{
         getfem::add_isotropic_linearized_elasticity_brick(
             M_model, M_integrationMethod, "uR", "lambda", "mu", RegionType::BulkRight);
         std::cout << "done.\n";
-
-        // // Add linear stress brick
-        // std::cout << "  Adding linear stress brick...";
-
-        // getfem::add_linear_term(
-        //     M_model,
-        //     M_integrationMethod,
-        //     "- theta/gammaN * sig_u_nL * sig_v_nL", /** expression */
-        //     Fault, /** region */
-        //     false, /** symmetric */
-        //     false, /** coercive */
-        //     "linear_stress",
-        //     false /** check */
-        // );
-
-        // std::cout << "done.\n";
-
-
-        // // Add KKT condition brick
-        // std::cout << "  Adding KKT condition brick...";
-
-        // getfem::add_nonlinear_term(
-        //     M_model,
-        //     M_integrationMethod,
-        //     "1/gammaN * pos_part(Pn_u) * Pn_v_theta",
-        //     Fault,
-        //     false,
-        //     false,
-        //     "KKTbrick"
-        // );
-
-        // std::cout << "done.\n";
-
-
-        // // Add Coulomb condition brick
-        // std::cout << "  Adding Coulomb friction brick...";
-        
-        // getfem::add_nonlinear_term(
-        //     M_model,
-        //     M_integrationMethod,
-        //     "(1/gammaN) * (proj_Pt1_u * Pt1_v_theta + proj_Pt2_u * Pt2_v_theta)",
-        //     Fault,
-        //     false,
-        //     false,
-        //     "CoulombBrick"
-        // );
-        
-        // std::cout << "done.\n";
 
 
         getfem::add_nonlinear_term(
@@ -256,11 +198,11 @@ namespace gf{
 
             if (bc->isLeftBoundary())
                 getfem::add_Dirichlet_condition_with_multipliers
-                    (M_model, M_integrationMethod, "uL", M_FEM.mf_u1(), bc->ID(), 
+                    (M_model, M_integrationMethod, "uL", M_FEM.mf_u(), bc->ID(), 
                      bc->name());
             else
                 getfem::add_Dirichlet_condition_with_multipliers
-                    (M_model, M_integrationMethod, "uR", M_FEM.mf_u2(), bc->ID(), 
+                    (M_model, M_integrationMethod, "uR", M_FEM.mf_u(), bc->ID(), 
                      bc->name());
         }
 
@@ -360,8 +302,8 @@ namespace gf{
         plain_vector &uL = M_model.set_real_variable("uL");
         plain_vector &uR = M_model.set_real_variable("uR");
 
-        auto dofs_uL = M_FEM.mf_u1().dof_on_region(M_mesh.region(BulkLeft));
-        auto dofs_uR = M_FEM.mf_u2().dof_on_region(M_mesh.region(BulkRight));
+        auto dofs_uL = M_FEM.mf_u().dof_on_region(M_mesh.region(BulkLeft));
+        auto dofs_uR = M_FEM.mf_u().dof_on_region(M_mesh.region(BulkRight));
         auto dofs_uF = dofs_uL & dofs_uR; // shared dofs on the fault
         auto dofs_uL_filtered = dofs_uL;
         auto dofs_uR_filtered = dofs_uR;
@@ -410,7 +352,7 @@ namespace gf{
         size_type nb_dof_L = dofs_uL.card();
         size_type nb_dof_R = dofs_uR.card();
         size_type nb_dof_F = dofs_uF.card();
-        size_type nb_dof = M_FEM.mf_u1().nb_dof();
+        size_type nb_dof = M_FEM.mf_u().nb_dof();
         size_type nb_dof_tot = nb_dof_L + nb_dof_R; // == nb_dof + nb_dof_F
 
         plain_vector U;
@@ -429,7 +371,7 @@ namespace gf{
         for (dal::bv_visitor ii(dofs_uL); !ii.finished(); ++ii) {
             size_type dof = ii;
             if (dof % dim == 0) {  // only once per node
-                base_node pt = M_FEM.mf_u1().point_of_basic_dof(dof);
+                base_node pt = M_FEM.mf_u().point_of_basic_dof(dof);
                 pt[0] -= offset;
                 dof_coords.push_back(pt);
                 size_type pt_idx = dof_coords.size() - 1;
@@ -442,7 +384,7 @@ namespace gf{
         for (dal::bv_visitor jj(dofs_uR); !jj.finished(); ++jj) {
             size_type dof = jj;
             if (dof % dim == 0) {  // only once per node
-                base_node pt = M_FEM.mf_u2().point_of_basic_dof(dof);
+                base_node pt = M_FEM.mf_u().point_of_basic_dof(dof);
                 pt[0] += offset;
                 dof_coords.push_back(pt);
                 size_type pt_idx = dof_coords.size() - 1;
@@ -571,7 +513,7 @@ namespace gf{
         }
 
         // Export to vtk (custom)
-        std::string filename = "result_" + std::to_string(i) + ".vtk";
+        std::string filename = "output/result_" + std::to_string(i) + ".vtk";
 
         std::ofstream out(filename);
         if (!out) {
@@ -633,10 +575,10 @@ namespace gf{
         // INTERNAL EXPORT
 
         // getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
-        // exp.exporting(M_FEM.mf_u1());
+        // exp.exporting(M_FEM.mf_u());
         // exp.write_mesh();
-        // exp.write_point_data(M_FEM.mf_u1(), M_model.real_variable("uL"), "uL");
-        // exp.write_point_data(M_FEM.mf_u2(), M_model.real_variable("uR"), "uR");
+        // exp.write_point_data(M_FEM.mf_u(), M_model.real_variable("uL"), "uL");
+        // exp.write_point_data(M_FEM.mf_u(), M_model.real_variable("uR"), "uR");
 
         // gmm::clean(VL, 1E-20);
         // exp.exporting(M_FEM.mf_stress());

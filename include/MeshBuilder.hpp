@@ -7,8 +7,6 @@
 
 namespace gf {
 
-    class MeshRegion;
-
     /**
      * @brief Builder class for building the mesh
      * In the Mesh class constructor, the MeshBuilderStrategy::construct() method

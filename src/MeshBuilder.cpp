@@ -226,7 +226,8 @@ namespace gf {
         // for (RegMap::iterator i = regmap.begin(); i != regmap.end(); i++) {
         //     std::cout << i->first << " " << i->second << "\n";
         // }
-        // std::cout << "done." << std::endl;
+        
+        std::cout << "done." << std::endl;
     }
 
     void
