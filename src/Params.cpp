@@ -83,7 +83,7 @@ namespace gf {
             numerics.FEMTypeLM = "FEM_QK(3,"+order_lm+")";//"FEM_QK_DISCONTINUOUS(3,0)";
             // std::cout << "Inside Params constructor: numerics.FEMTypeRhs = " << numerics.FEMTypeRhs << std::endl;
         }
-        else 
+        else
             throw std::runtime_error("Select either GT_PK(3,1) or GT_QK(3,1)");
 
         if (verbose) std::cout << *this << std::endl;

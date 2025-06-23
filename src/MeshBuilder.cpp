@@ -256,8 +256,8 @@ namespace gf {
     {
         // Extract parameters from domain (already read from .pot)
         scalar_type Lx = M_domain.Lx, Ly = M_domain.Ly, Lz = M_domain.Lz, h = M_domain.h;
-        scalar_type faultX0 = Lx/2;
-        scalar_type faultX1 = Lx/2 + Lz*std::tan(M_domain.angle*M_PI/180.0);
+        scalar_type faultX0 = Lx/2 - Lz*std::tan(M_domain.angle*M_PI/180.0)/2;
+        scalar_type faultX1 = Lx/2 + Lz*std::tan(M_domain.angle*M_PI/180.0)/2;
 
         std::ofstream meshfile("fractured_mesh.geo");
         if (!meshfile.is_open())
@@ -358,14 +358,15 @@ namespace gf {
             << "Physical Volume(\"BulkRight\") = {102};\n"
             << "Physical Surface(\"Fault\") = {1000};\n\n";
 
-        if (M_domain.meshType == "GT_QK(3,1)")         
+        if (M_domain.meshType == "GT_QK(3,1)"){
+            int nn = std::round(Lz / h);
             meshfile << "// ------------ Mesh Settings ------------\n"
-            << "Transfinite Line {1:20} = 10 Using Progression 1;\n"
+            << "Transfinite Line {1:20} = "<< nn <<" Using Progression 1;\n"
             << "Transfinite Surface {1,2,3,4,5,6,7,8,9,10,11,1000};\n"
             << "Transfinite Volume {101, 102};\n"
             << "Recombine Surface {1,2,3,4,5,6,7,8,9,10,11,1000};\n"
             << "Recombine Volume {101, 102};\n";
-
+        }
         meshfile.close();
 
         // Run Gmsh to generate the mesh
