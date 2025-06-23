@@ -18,8 +18,8 @@ namespace gf {
         std::cout << "Building the mesh internally... ";
         size_type N = M_domain.dim;
         std::string meshType = M_domain.meshType; // element type for meshing, linear by defaults
-        auto gtd = meshType == "tetra"? "GT_PK(3,1)" : "GT_QK(3,1)"; // geometric transformation descriptor
-        auto pgt = bgeot::geometric_trans_descriptor(gtd);
+
+        auto pgt = bgeot::geometric_trans_descriptor(meshType);
 
         auto pbDim = pgt->dim();
         assert(N==pbDim);
@@ -358,7 +358,7 @@ namespace gf {
             << "Physical Volume(\"BulkRight\") = {102};\n"
             << "Physical Surface(\"Fault\") = {1000};\n\n";
 
-        if (M_domain.meshType == "hexa")         
+        if (M_domain.meshType == "GT_QK(3,1)")         
             meshfile << "// ------------ Mesh Settings ------------\n"
             << "Transfinite Line {1:20} = 10 Using Progression 1;\n"
             << "Transfinite Surface {1,2,3,4,5,6,7,8,9,10,11,1000};\n"

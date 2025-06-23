@@ -30,7 +30,7 @@ namespace gf {
         domain.Nx = static_cast<int>(domain.Lx/domain.h);
         domain.Ny = static_cast<int>(domain.Ly/domain.h);
         domain.Nz = static_cast<int>(domain.Lz/domain.h);
-        domain.meshType = datafile("domain/meshType", "tetra");
+        domain.meshType = datafile("domain/meshType", "GT_PK(3,1)");
         
         physics.M_E0 = datafile("physics/E", 0.0);
         physics.M_nu = datafile("physics/nu", 0.0);
@@ -53,42 +53,38 @@ namespace gf {
         
         contact.method = datafile("contact/method", "nitsche");
         contact.theta = datafile("contact/theta", 0.0);
-        contact.gammaN = datafile("contact/gammaN", 10.0)*physics.M_E0/domain.h; // gamma0 = 10*E/h
+        contact.gammaN = datafile("contact/gammaN", 10.0)*physics.M_E0/domain.h; // gammaN = 10*E/h
         contact.gammaP = datafile("contact/gammaP", 1.e5);
-        contact.gammaL = datafile("contact/gammaL", 10.0)*physics.M_E0/domain.h;
+        contact.gammaL = datafile("contact/gammaL", 10.0)*physics.M_E0/domain.h; // gammaL = 10*E/h
 
-        std::string order_u = "";
-        if (contact.method == "augLM")
-            order_u = datafile("domain/order_u","2");
-        else
-            order_u = datafile("domain/order_u", "1");
+        std::string order_u = datafile("domain/order_u", "1");
         std::string order_lm = datafile("domain/order_lm", "0");
-        if (order_u <= order_lm || (order_lm == "0" && order_u == "1"))
-            std::cerr << "WARNING: The chosen spaces for displacement and LM are not inf-sup stable.\n"
-                      << "Consider using a higher order for the displacement." << std::endl;
 
         time.t0 = datafile("time/t0", 0.0);
         time.tend = datafile("time/tend", 1.0);
         time.dt = datafile("time/dt", 0.1);
 
-        if (domain.meshType == "tetra")
+        if (domain.meshType == "GT_PK(3,1)")
         {
             numerics.integration = "IM_TETRAHEDRON(5)";
-            numerics.FEMTypeDisplacement = "FEM_PK(3," + order_u +")";
-            numerics.FEMTypeRhs = "FEM_PK(3," + order_u +")";
-            numerics.FEMTypeStress = "FEM_PK(3," + order_u +")";
-            numerics.FEMTypeLM = "FEM_PK_DISCONTINUOUS(3," + order_lm +")";
+            numerics.FEMTypeDisplacement = "FEM_PK(3,"+order_u+")";
+            numerics.FEMTypeRhs = "FEM_PK(3,"+order_u+")";
+            numerics.FEMTypeStress = "FEM_PK(3,"+order_u+")";
+            /** \todo Select LBB compliant space for the multiplier or throw an error*/
+            numerics.FEMTypeLM = "FEM_PK(3,"+order_lm+")";//"FEM_PK_DISCONTINUOUS(3,0)";
         }
-        else if (domain.meshType == "hexa")
+        else if (domain.meshType == "GT_QK(3,1)")
         {
             numerics.integration = "IM_HEXAHEDRON(5)";
-            numerics.FEMTypeDisplacement = "FEM_QK(3," + order_u +")";
-            numerics.FEMTypeRhs = "FEM_QK(3," + order_u +")";
-            numerics.FEMTypeStress = "FEM_QK(3," + order_u +")";
-            numerics.FEMTypeLM = "FEM_QK_DISCONTINUOUS(3," + order_lm +")";
+            numerics.FEMTypeDisplacement = "FEM_QK(3,"+order_u+")";
+            numerics.FEMTypeRhs = "FEM_QK(3,"+order_u+")";
+            numerics.FEMTypeStress = "FEM_QK(3,"+order_u+")";
+            /** \todo Select LBB compliant space for the multiplier or throw an error*/
+            numerics.FEMTypeLM = "FEM_QK(3,"+order_lm+")";//"FEM_QK_DISCONTINUOUS(3,0)";
+            // std::cout << "Inside Params constructor: numerics.FEMTypeRhs = " << numerics.FEMTypeRhs << std::endl;
         }
         else 
-            throw std::runtime_error("Only tetrahedral and hexahedral meshes are supported.");
+            throw std::runtime_error("Select either GT_PK(3,1) or GT_QK(3,1)");
 
         if (verbose) std::cout << *this << std::endl;
     }

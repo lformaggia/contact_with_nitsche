@@ -252,7 +252,7 @@ namespace gf{
         plain_vector F(nb_dof_rhs*dim);
         
         plain_vector VM(M_FEM.mf_stress().nb_dof());
-
+        
         // Time loop
         size_type n_timesteps = static_cast<size_type>(M_params.time.tend - M_params.time.t0)/M_params.time.dt;
         
@@ -273,7 +273,9 @@ namespace gf{
 
             // Solve the problem
             gmm::iteration iter(M_params.it.atol, 1, M_params.it.maxIt);
+
             getfem::standard_solve(M_model,iter);
+
             if (iter.converged()) {
                 std::cout << "  Iteration converged after " << iter.get_iteration() << " iterations." << std::endl;
             } else {

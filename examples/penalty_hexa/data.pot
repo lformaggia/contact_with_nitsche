@@ -4,7 +4,7 @@ Lx = 1                          % Lenght of domain side along x
 Ly = 1                          % Lenght of domain side along y
 Lz = 1                          % Lenght of domain side along z
 h = 0.5                         % Grid spacing
-meshType = hexa                 % Element type: tetra hexa
+meshType = GT_QK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK(3,1) for tetrahedron
 order_u = 1                     % Order of Lagrangian Finite Elements for displacement
 order_lm = 0                    % Order of Lagrangian Finite Elements for LM (used iff method==augLM)[../]
 
