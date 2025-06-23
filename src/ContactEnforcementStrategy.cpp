@@ -6,7 +6,7 @@ namespace gf {
     void
     NitscheContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im) const {
         
-        md.add_initialized_scalar_data("gammaN", M_gamma0);
+        md.add_initialized_scalar_data("gammaN", M_gammaN);
         md.add_initialized_scalar_data("theta", M_theta);  // symmetric variant
         
         // Normal gap and stress
@@ -75,7 +75,7 @@ namespace gf {
     void
     PenaltyContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im) const {
         
-        md.add_initialized_scalar_data("epsilon", M_epsilon);
+        md.add_initialized_scalar_data("gammaP", M_gammaP);
         md.add_macro("Sh", "mu_fric * pos_part(un_jump)");
         md.add_macro("norm_ut_jump", "sqrt(ut1_jump*ut1_jump + ut2_jump*ut2_jump)");
         md.add_macro("proj_ut1_jump", "ut1_jump * min(1, Sh / (norm_ut_jump + eps))");
@@ -88,7 +88,7 @@ namespace gf {
         getfem::add_nonlinear_term(
             md,
             im,
-            "epsilon * pos_part(un_jump) * vn_jump",
+            "gammaP * pos_part(un_jump) * vn_jump",
             Fault,
             false,
             false,
@@ -102,7 +102,7 @@ namespace gf {
         getfem::add_nonlinear_term(
             md,
             im,
-            "epsilon*(proj_ut1_jump * vt1_jump + proj_ut2_jump * vt2_jump)",
+            "gammaP*(proj_ut1_jump * vt1_jump + proj_ut2_jump * vt2_jump)",
             Fault,
             false,
             false,
@@ -112,23 +112,26 @@ namespace gf {
 
     }
 
+// md.add_fem_variable("lambdan", M_mfLMn);
+// md.add_fem_variable("lambdat", M_mfLMt);
 
+// md.add_multiplier("lambdan", M_mfLMn, Fault, "uL");
+// md.add_multiplier("lambdat", M_mfLMt, Fault, "uL");
+// md.add_filtered_fem_variable("lambdan", M_mfLMn, Fault);
     void
     AugmentedLagrangianContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im) const {
-
-        M_mfLM.set_qdim(1);
-        md.add_fem_variable("lambdan", M_mfLM);
-        M_mfLM.set_qdim(3);
-        md.add_fem_variable("lambdat", M_mfLM);
-        M_mfLM.set_qdim(1);
         
+        md.add_filtered_fem_variable("mult", M_mfLMt, Fault);
+
         md.add_initialized_scalar_data("gammaL", M_gammaL);
         
         // Normal gap and stress
-        md.add_macro("lambdat1", "lambdat . t1");
-        md.add_macro("lambdat2", "lambdat . t2");
-        md.add_macro("mut1", "Test_lambdat . t1");
-        md.add_macro("mut2", "Test_lambdat . t2");
+        md.add_macro("lambdan", "mult . n");
+        md.add_macro("lambdat1", "mult . t1");
+        md.add_macro("lambdat2", "mult . t2");
+        md.add_macro("mun", "Test_mult . n");
+        md.add_macro("mut1", "Test_mult . t1");
+        md.add_macro("mut2", "Test_mult . t2");
 
         md.add_macro("Pn_u", "(gammaL * un_jump - lambdan)");
         md.add_macro("Pt1_u", "(gammaL * ut1_jump - lambdat1)");
@@ -148,7 +151,7 @@ namespace gf {
         getfem::add_nonlinear_term(
             md,
             im,
-            "gammaL * pos_part(Pn_u) * vn_jump",
+            "pos_part(Pn_u) * vn_jump",
             Fault,
             false,
             false,
@@ -156,13 +159,12 @@ namespace gf {
         );
         std::cout << "done.\n";
 
-        M_mfLM.set_qdim(3);
         // Add Coulomb condition brick
         std::cout << "  Adding Coulomb friction brick...";
         getfem::add_nonlinear_term(
             md,
             im,
-            "gammaL * (proj_Pt1_u * vt1_jump + proj_Pt2_u * vt2_jump)",
+            "proj_Pt1_u * vt1_jump + proj_Pt2_u * vt2_jump",
             Fault,
             false,
             false,
@@ -171,13 +173,12 @@ namespace gf {
         std::cout << "done.\n";
         
         
-        M_mfLM.set_qdim(1);
         // Add LM term for normal gap
         std::cout << "  Adding Lagrange multiplier term for normal gap...";
         getfem::add_nonlinear_term(
             md,
             im,
-            " - 1/gammaL * pos_part(Pn_u) * Test_lambdan",
+            " - 1/gammaL * (lambdan + pos_part(Pn_u)) * mun",
             Fault,
             false,
             false,
@@ -186,20 +187,35 @@ namespace gf {
         std::cout << "done.\n";
 
         
-        M_mfLM.set_qdim(1);
         // Add LM term for tangential gap
         std::cout << "  Adding Lagrange multiplier term for tangential gap...";
         getfem::add_nonlinear_term(
             md,
             im,
-            " (lambdat1 + proj_Pt1) * mut1 + (lambdat2 + proj_Pt2) * mut2",
+            " -1/gammaL * (lambdat1 + proj_Pt1_u) * mut1 + (lambdat2 + proj_Pt2_u) * mut2",
             Fault,
             false,
             false,
             "LM_TangentialGapBrick"
         );
         std::cout << "done.\n";
-        
+
+        getfem::add_nonlinear_term(
+            md, im,
+            "eps * lambdan * mun",
+            Fault,
+            false, false,
+            "LM_NormalStab"
+        );
+
+        getfem::add_nonlinear_term(
+            md, im,
+            "eps * lambdat1 . mut1 + eps * lambdat2 . mut2",
+            Fault,
+            false, false,
+            "LM_TangentialStab"
+        );
+        std::cout << "done.\n";          
     }
 
 

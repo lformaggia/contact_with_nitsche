@@ -30,11 +30,8 @@
 
 #include "GetPot"
 #include <iostream>
-#include <boost/shared_ptr.hpp>
 #include <iomanip>
 #include <functional>
-
-
 
 namespace gf {
     

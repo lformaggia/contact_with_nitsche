@@ -3,8 +3,6 @@
 #include <sstream>
 #include <algorithm>
 
-bool DEBUGBC = false;
-
 namespace gf {
 
     BCHandler::BCHandler(const getfem::mesh& m)
@@ -76,20 +74,12 @@ namespace gf {
                 M_BCList[T].emplace_back(std::move(bc));
             }
 
-            else if constexpr (T == BCType::Mixed) { /** !\todo */
+            else if constexpr (T == BCType::Mixed) {
                 // Build the BCMixed object bc
                 auto bc = std::make_unique<BCMix>(M_mesh.region(regionsID[i]), regionsID[i], M_parser, T, n);
                 // Add to map
                 M_BCList[BCType::Mixed].emplace_back(std::move(bc));
             }
-
-            if (DEBUGBC)
-                if constexpr(T==BCType::Dirichlet)
-                std::clog << "DEBUG: evaluating bdDisp" << i <<" at ((1,2,3),100): ("
-                << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[0] << ", "
-                << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[1] << ", "
-                << M_BCList[BCType::Dirichlet][i]->eval({1,2,3},100)[2]
-                << ")" << std::endl;
 
         }
 

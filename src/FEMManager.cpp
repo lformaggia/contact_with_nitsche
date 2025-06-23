@@ -1,13 +1,13 @@
 #include "FEMManager.hpp"
 
-bool DEBUGFEM = true;
 namespace gf {
 
     FEMManager::FEMManager(const getfem::mesh& mesh)
         : M_mfU(mesh, mesh.dim()),
         M_mfStress(mesh),
         M_mfRhs(mesh),
-        M_mfLM(mesh) {
+        M_mfLMn(mesh),
+        M_mfLMt(mesh) {
         }
 
     void FEMManager::setMeshFem(const Numerics &n, const getfem::mesh& mesh){
@@ -23,7 +23,9 @@ namespace gf {
         M_mfStress.set_finite_element(pfStress);
         M_mfStress.set_qdim(3,3);
         M_mfRhs.set_finite_element(pfRhs);
-        M_mfLM.set_finite_element(pfLM);
+        M_mfLMn.set_finite_element(pfLM);
+        M_mfLMt.set_finite_element(pfLM);
+        M_mfLMt.set_qdim(3);
 
         std::cout << "done." << std::endl;
 

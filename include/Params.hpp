@@ -37,9 +37,9 @@ namespace gf {
     struct Contact {
         std::string method;
         scalar_type theta;
-        scalar_type gamma0;
+        scalar_type gammaN;
+        scalar_type gammaP;
         scalar_type gammaL;
-        scalar_type epsilon;
     };
     struct Numerics {
         std::string integration;

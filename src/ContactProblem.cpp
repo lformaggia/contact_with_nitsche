@@ -28,13 +28,13 @@ namespace gf{
         // Select the method    
         if (M_params.contact.method == "nitsche")
             M_contactEnforcement = std::make_unique<NitscheContactEnforcement>(
-                M_params.contact.theta, M_params.contact.gamma0);
+                M_params.contact.theta, M_params.contact.gammaN);
         else if (M_params.contact.method == "penalty")
             M_contactEnforcement = std::make_unique<PenaltyContactEnforcement>(
-                M_params.contact.epsilon);
+                M_params.contact.gammaP);
         else if (M_params.contact.method == "augLM")
             M_contactEnforcement = std::make_unique<AugmentedLagrangianContactEnforcement>(
-                M_params.contact.gammaL, M_FEM.mf_LM());
+                M_params.contact.gammaL, M_FEM.mf_LMn(), M_FEM.mf_LMt());
         else
             throw std::runtime_error("Unknown contact enforcement method: " + M_params.contact.method);
     
@@ -50,7 +50,6 @@ namespace gf{
         
         dim_type dim = M_mesh.get().dim();
         size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
-
 
         // Main unknown of the problem (displacement)
         std::cout << "  Defining variables...";
@@ -242,7 +241,7 @@ namespace gf{
 
     void
     ContactProblem::solve() {
-
+        gmm::set_traces_level(2);
         std::cout << "Solving the problem..." << std::endl;
 
         const auto & NeumannBCs = M_BC.Neumann();
@@ -487,8 +486,6 @@ namespace gf{
 
             for (size_type ipt = 0; ipt < nb_pts; ++ipt) {
                 base_node pt = M_mesh.get().points_of_convex(i.cv())[ipt];
-                // std::cout << "point " << ipt << " in cv " << i.cv() << ": "
-                //     << pt[0] << ", " << pt[1] << ", " << pt[2] << std::endl;
                 pt[0] += offset;
 
                 // Find corresponding index in dof_coords
