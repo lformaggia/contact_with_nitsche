@@ -5,8 +5,8 @@ Ly = 2                          % Lenght of domain side along y
 Lz = 2                          % Lenght of domain side along z
 h = 0.5                         % Grid spacing
 meshType = GT_QK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK(3,1) for tetrahedron
-order_u = 1
-order_lm = 1
+order_u = 1                     % Order of Lagrangian Finite Elements for displacement
+order_lm = 1                    % Order of Lagrangian Finite Elements for LM (used iff method==augLM)
 [../]
 
 [physics]
@@ -18,18 +18,10 @@ mu_friction = 0.4               % Friction coefficient
 regionDisp = [1,5]              % Dirichlet bd regions
 bdDisp1 = {0.,0.,0.}
 bdDisp2 = {0.,0.,0.}
-bdDisp3 = {0.,0.,0.}
-bdDisp4 = {0.,0.,0.}
-bdDisp5 = {0.,0.,0.}
-bdDisp6 = {0.,0.,0.}
-bdDisp7 = {0.,0.,0.}
-bdDisp8 = {0.,0.,0.}
-bdDisp9 = {0.,0.,0.}
 
 regionDispNormal = [9]          % Normal Dirichlet bd regions
 bdDispN1 = 0.
-bdDispN2 = 0.
-bdDispN3 = 0.
+
 
 regionLoad = [7,10]             % Neumann bd regions
 bdLoad1 = {0,0,-t}
@@ -39,7 +31,7 @@ bdLoad2 = {-3,0,0}
 [it]
 tol = 1.0e-14                   % Tolerance for contact
 maxit = 100                      % Maximum number of iteration
-atol = 1.0e-4
+tol = 1.0e-4
 [../]
 
 [contact]

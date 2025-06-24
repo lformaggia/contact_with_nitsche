@@ -2,17 +2,17 @@
 
 namespace gf {
 
-    FEMManager::FEMManager(const getfem::mesh& mesh)
+    FEMManager::FEMManager(const getfem::mesh& mesh, bool v)
         : M_mfU(mesh, mesh.dim()),
         M_mfStress(mesh),
         M_mfRhs(mesh),
-        M_mfLMn(mesh),
-        M_mfLMt(mesh) {
+        M_mfLM(mesh, mesh.dim()),
+        verbose(v){
         }
 
-    void FEMManager::setMeshFem(const Numerics &n, const getfem::mesh& mesh){
+    void FEMManager::setMeshFem(const Numerics &n){
         
-        std::cout << "Setting Finite Element... ";
+        if (verbose) std::cout << "Setting Finite Element...";
 
         getfem::pfem pfU = getfem::fem_descriptor(n.FEMTypeDisplacement);
         getfem::pfem pfStress = getfem::fem_descriptor(n.FEMTypeStress);
@@ -23,11 +23,9 @@ namespace gf {
         M_mfStress.set_finite_element(pfStress);
         M_mfStress.set_qdim(3,3);
         M_mfRhs.set_finite_element(pfRhs);
-        M_mfLMn.set_finite_element(pfLM);
-        M_mfLMt.set_finite_element(pfLM);
-        M_mfLMt.set_qdim(3);
+        M_mfLM.set_finite_element(pfLM);
 
-        std::cout << "done." << std::endl;
+        if (verbose) std::cout << "done." << std::endl;
 
     }
 

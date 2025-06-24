@@ -35,41 +35,48 @@
 
 namespace gf {
     
-    // some Getfem++ types that are used
+    // Some Getfem++ types that are used
     using bgeot::scalar_type; ///< = double
     using bgeot::base_small_vector; ///< special class for small (dim < 16) vectors
     using bgeot::base_vector; ///< just a std::vector<scalar_type>
     using bgeot::base_node; ///< geometrical nodes (derived from base_small_vector)
     using bgeot::size_type; ///< basically std::vector<scalar_type>::size_type
-    using bgeot::dim_type;
+    using bgeot::dim_type; ///< type for the dimension of the mesh
 
     using ScalarFunctionType = std::function<scalar_type(base_node,scalar_type)>; ///< f(\vector{x},t)
     using VectorFunctionType = std::function<base_small_vector(base_node, scalar_type)>; ///< \vector{f}(\vector{x},t)
     
-    using sparse_vector = getfem::modeling_standard_sparse_vector;
-    using sparse_matrix = getfem::modeling_standard_sparse_matrix;
-    using plain_vector = getfem::modeling_standard_plain_vector;
-
-    using varnamelist = getfem::model::varnamelist;
+    using plain_vector = getfem::modeling_standard_plain_vector; /// a vector of scalar_type, used for Getfem++ models
 
 
+    /**
+     * @brief Enumeration for boundary condition types.
+     * This enum defines the types of boundary conditions that can be applied to the model.
+     */
     enum BCType {
         Dirichlet,
         Neumann,
         Mixed
     };
 
+    /**
+     * @brief Enumeration for regions in the mesh.
+     * This enum defines the ID associated with different regions in the mesh.
+     * These regions are used to apply boundary conditions or to identify specific parts of the mesh.
+     */
     enum RegionType {
-        // BottomLeft = 1,
-        // YmaxLeft = 2,
-        // TopLeft = 3,
-        // YminLeft = 4,
-        // BottomRight = 5,
-        // YmaxRight = 6,
-        // TopRight = 7,
-        // YminRight = 8,
-        // Xmin = 9,
-        // Xmax = 10,
+        /* This is the order in which the physical entities are written out on the .geo file.
+            BottomLeft = 1,
+            YmaxLeft = 2,
+            TopLeft = 3,
+            YminLeft = 4,
+            BottomRight = 5,
+            YmaxRight = 6,
+            TopRight = 7,
+            YminRight = 8,
+            Xmin = 9,
+            Xmax = 10,
+        */
         BulkLeft = 11,
         BulkRight = 12,
         Fault = 13

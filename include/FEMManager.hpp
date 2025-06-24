@@ -12,31 +12,43 @@ namespace gf {
      */
     class FEMManager {
     public:
-        FEMManager(const getfem::mesh&);
+
+        /**
+         * @brief Constructor that initializes the FEMManager with a mesh.
+         * @param m The mesh to associate with this FEMManager.
+         * @param v Verbosity flag to control logging output.
+         */
+        FEMManager(const getfem::mesh& m, bool v = false);
     
         /**
          * @brief Set the finite element method (FEM) spaces based on the provided numerics and mesh.
          * @param n The Numerics object containing FEM type information.
-         * @param m The mesh to set the FEM spaces for.
          */
-        void setMeshFem(const Numerics& n, const getfem::mesh&);
+        void setMeshFem(const Numerics& n);
 
+        /**
+         * \defgroup MeshFemGetters Getters for mesh_fem
+         * \brief Getters that return references to various mesh_fem objects.
+         *
+         * These functions provide access to internal mesh_fem representations
+         * used for displacement, stress, RHS, and Lagrange multipliers.
+         */
+        ///@{
         getfem::mesh_fem& mf_u() { return M_mfU; }
         
         getfem::mesh_fem& mf_stress() { return M_mfStress; }
 
         getfem::mesh_fem& mf_rhs() { return M_mfRhs; }
 
-        getfem::mesh_fem& mf_LMn() { return M_mfLMn; }
-        
-        getfem::mesh_fem& mf_LMt() { return M_mfLMt; }
+        getfem::mesh_fem& mf_LM() { return M_mfLM; }
+        ///@}
 
     private:
-        getfem::mesh_fem M_mfU;
-        getfem::mesh_fem M_mfStress;
-        getfem::mesh_fem M_mfRhs;
-        getfem::mesh_fem M_mfLMn;
-        getfem::mesh_fem M_mfLMt;
+        getfem::mesh_fem M_mfU; ///< Mesh finite element method for displacement
+        getfem::mesh_fem M_mfStress; ///< Mesh finite element method for stress
+        getfem::mesh_fem M_mfRhs; ///< Mesh finite element method for right-hand side
+        getfem::mesh_fem M_mfLM; ///< Mesh finite element method for Lagrange multipliers
+        bool verbose; ///< Verbosity flag for logging
 
     };
 

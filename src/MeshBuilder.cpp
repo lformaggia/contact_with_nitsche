@@ -15,7 +15,7 @@ namespace gf {
     void
     BuiltInBuilder::buildMesh(getfem::mesh& mesh) const
     {
-        std::cout << "Building the mesh internally... ";
+        if (verbose) std::cout << "Building the mesh internally...";
         size_type N = M_domain.dim;
         std::string meshType = M_domain.meshType; // element type for meshing, linear by defaults
 
@@ -36,7 +36,7 @@ namespace gf {
         // create the mesh
         getfem::regular_unit_mesh(mesh, nsubdiv, pgt);
 
-        // transform the mesh (scale the unit mesh to [M_domain.Lx, M_domain.Ly, M_domain.Lz])
+        // transform the mesh (scale the unit mesh to [M_domain.Lx, M_domain.Ly, M_domain.Lz] and translate it)
         bgeot::base_matrix M(N,N);
         for (size_type i = 0; i < N; ++i)
             M(i,i) = lengths[i];
@@ -44,7 +44,7 @@ namespace gf {
 
         base_small_vector v {-0.5*M_domain.Lx,0.,0.};
         mesh.translation(v);
-        std::cout << "done.\n";
+        if (verbose) std::cout << "done.\n";
 
     }
 
@@ -52,7 +52,7 @@ namespace gf {
     void
     BuiltInBuilder::initRegions(getfem::mesh& mesh) const
     {
-        std::cout << "Initializing regions... ";
+        if (verbose) std::cout << "Initializing regions...";
 
         // Create the internal regions BulkLeft, BulkRight, Fault
         dal::bit_vector leftConvexesList;
@@ -113,13 +113,12 @@ namespace gf {
                 if (std::abs(n[0] - 1.0) < 1.e-6 && std::abs(n[1]) < 1.e-6 &&
                     std::abs(n[2]) < 1.e-6 && centroid[0] < -1.e-6){
 
-                    // add the face to the fault's meshRegion
+                    // add the face to the fault's region
                     mesh.region(RegionType::Fault).add(i,f);
                 }
             }
         }
 
-        
         // Create the boundary regions
         getfem::mesh_region borderFaces;
         getfem::outer_faces_of_mesh(mesh, borderFaces);
@@ -202,7 +201,7 @@ namespace gf {
         // //    base_small_vector(-1.,0.,0.), 0.01);
         // // bds(10) = getfem::select_faces_of_normal(mesh, border_faces,
         // //    base_small_vector(1.,0.,0.), 0.01);
-        std::cout << "done." << std::endl;
+        if (verbose) std::cout << "done." << std::endl;
 
     }
 
@@ -212,29 +211,23 @@ namespace gf {
     GmshBuilder::buildMesh(getfem::mesh& mesh) const
     {
 
-        std::cout << "Generating mesh file... ";
+        if (verbose) std::cout << "Generating mesh file...";
         generateMeshFile();
-        std::cout << "done." << std::endl;
+        if (verbose) std::cout << "done." << std::endl;
 
-        std::cout << "Importing the mesh file... ";
+        if (verbose) std::cout << "Importing the mesh file...";
         using RegMap = std::map<std::string, size_type>;
         RegMap regmap;
         getfem::import_mesh_gmsh("fractured_mesh.msh", mesh, regmap);
-
-        /** @DEBUG: print the region map **/
-        // std::cout << regmap.size() << "\n";
-        // for (RegMap::iterator i = regmap.begin(); i != regmap.end(); i++) {
-        //     std::cout << i->first << " " << i->second << "\n";
-        // }
         
-        std::cout << "done." << std::endl;
+        if(verbose) std::cout << "done." << std::endl;
     }
 
     void
     GmshBuilder::initRegions(getfem::mesh& mesh) const
     {
 
-        std::cout << "Initializing regions... ";
+        if (verbose) std::cout << "Initializing regions...";
 
         getfem::mesh_region &fault_region = mesh.region(Fault);
         const getfem::mesh_region &bulk_region = mesh.region(BulkRight);
@@ -245,7 +238,7 @@ namespace gf {
                 fault_region.sup(it.cv(),it.f());
         }
 
-        std::cout << "done." << std::endl;
+        if (verbose) std::cout << "done." << std::endl;
 
     }
 
@@ -377,6 +370,5 @@ namespace gf {
             throw std::runtime_error("Gmsh mesh generation failed.");
 
     }
-
 
 } // namespace gf

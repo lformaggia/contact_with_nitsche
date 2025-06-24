@@ -20,8 +20,6 @@ endmacro()
 empty_directory("${PROJECT_ROOT}/build")
 empty_directory("${PROJECT_ROOT}/lib")
 
-# file(REMOVE_RECURSE "${PROJECT_ROOT}/build")
-# file(REMOVE_RECURSE "${PROJECT_ROOT}/lib")
 
 # Clean each example directory
 file(GLOB EXAMPLES RELATIVE "${PROJECT_ROOT}/examples" "${PROJECT_ROOT}/examples/*")
@@ -52,5 +50,10 @@ foreach(EXAMPLE ${EXAMPLES})
         endforeach()
     endif()
 endforeach()
+
+# Clean the documentation directory if it exists
+if(EXISTS "${PROJECT_ROOT}/doc")
+    file(REMOVE_RECURSE "${PROJECT_ROOT}/doc")
+endif()
 
 message(STATUS "Running clean_all.cmake")

@@ -11,10 +11,11 @@ namespace gf{
         VectorFunctionType M_function; ///< The function
         BCType M_BCtype; ///< Dirichlet, Neumann or Mixed
         size_type M_ID; ///< the ID of the boundary face where the BC is applied
-        base_small_vector M_normal;
+        base_small_vector M_normal; ///< the normal vector to the boundary region
 
     public:
 
+        /** @brief Constructor */
         BC(const getfem::mesh_region& rg, size_type regionID,
             VectorFunctionType func, BCType bctype, base_small_vector n)
         : M_region(rg), M_function(func), M_BCtype(bctype), M_ID(regionID), M_normal(n){
@@ -30,6 +31,9 @@ namespace gf{
          */
         virtual BCType type() const = 0;
 
+        /**
+         * @brief Returns the name of the BC (type + ID)
+         */
         virtual std::string name() const = 0;
 
         /**
@@ -51,8 +55,14 @@ namespace gf{
             return M_function(x,t);
         }
 
+        /**
+         * @brief Returns the function associated with the BC
+         */
         VectorFunctionType& f() { return M_function; }
         
+        /**
+         * @brief Returns true if the boundary region is on the left side of the domain
+         */
         bool isLeftBoundary() const {
             return M_ID == 1 || M_ID == 2 || M_ID == 3 || M_ID == 4 || M_ID == 9;
         }
@@ -60,8 +70,9 @@ namespace gf{
     };
 
 
-
-
+    /**
+     * @brief Dirichlet boundary condition class
+     */
     class BCDir : public BC {
 
     public:
@@ -75,6 +86,9 @@ namespace gf{
 
     };
 
+    /**
+     * @brief Neumann boundary condition class
+     */
     class BCNeu : public BC {
 
     public:
@@ -88,6 +102,10 @@ namespace gf{
     };
 
 
+    /**
+     * @brief Mixed boundary condition class
+     * To impose the normal component of the displacement only
+     */
     class BCMix : public BC {
     public:
         BCMix(const getfem::mesh_region& rg, size_type ID, VectorFunctionType f, BCType bctype, base_small_vector n)

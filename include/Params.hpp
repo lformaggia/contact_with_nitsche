@@ -6,6 +6,11 @@
 
 namespace gf {
 
+    /**
+     * @brief A structure to hold the domain parameters of the simulation
+     * It contains the dimensions, lengths, number of elements in each direction,
+     * mesh type, and other related parameters.
+     */
     struct Domain {
         size_type dim;
         scalar_type Lx;
@@ -18,6 +23,12 @@ namespace gf {
         scalar_type angle;
         std::string meshType;
     };
+
+    /**
+     * @brief A structure to hold the physics parameters of the simulation
+     * It contains the material properties such as Young's modulus, Poisson's ratio,
+     * and the gravitational acceleration.
+     */
     struct Physics {
         scalar_type M_E0;
         scalar_type M_nu;
@@ -26,14 +37,25 @@ namespace gf {
         base_small_vector M_gravity;
         scalar_type M_mu_friction;
     };
+
+    /**
+     * @brief A structure to hold the parameters related to the Newton method
+     * It contains the maximum number of iterations and the tolerance for convergence.
+     * Additional parameters can be added as needed.
+     */
     struct It {
         scalar_type maxIt;
-        scalar_type rtol;
-        scalar_type atol;
-        /** \todo:
+        scalar_type tol;
+        /** Possible future extension:
          * add other Newton Params, if needed
          */
     };
+
+    /**
+     * @brief A structure to hold the contact parameters of the simulation
+     * It contains the method used for contact, and the parameters related to that method.
+     * The method can be "penalty", "nitsche", or "augLM".
+     */
     struct Contact {
         std::string method;
         scalar_type theta;
@@ -41,22 +63,39 @@ namespace gf {
         scalar_type gammaP;
         scalar_type gammaL;
     };
+
+    /**
+     * @brief A structure to hold the numerical parameters of the simulation
+     * It contains the integration method, the finite element types for displacement, stress, rhs, and LM.
+     */
     struct Numerics {
         std::string integration;
         std::string FEMTypeDisplacement;
         std::string FEMTypeStress;
         std::string FEMTypeRhs;
         std::string FEMTypeLM;
-    }; 
+    };
+
+    /**
+     * @brief A structure to hold the time parameters of the simulation
+     * It contains the initial time, final time, and time step.
+     * It can be extended to include backtracking parameters if needed.
+     */
     struct Time {
         scalar_type t0;
         scalar_type tend;
         scalar_type dt;
-        /** \todo:
+        /** Possible future extension:
          * add backtracking parameters, if needed
-         * */
+         */
     };
 
+    /**
+     * @brief A structure to hold all the parameters of the simulation
+     * It is initialized from the command line arguments and the data file
+     * It contains all the parameters needed for the simulation, including
+     * domain, physics, time, numerics, etc.
+     */
     struct Params {
         GetPot datafile;
         Domain domain;
@@ -72,7 +111,9 @@ namespace gf {
         
     };
 
-    
+    /**
+     * @brief Overloaded output operator for Params
+     */
     std::ostream& operator<<(std::ostream&, const Params&);
 
 } // namespace gf

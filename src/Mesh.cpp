@@ -6,9 +6,9 @@ namespace gf {
     : M_params(p)
     {
         if (M_params.gmsh)
-            M_meshBuilder = std::make_unique<GmshBuilder>(M_params.domain);
+            M_meshBuilder = std::make_unique<GmshBuilder>(M_params.domain, M_params.verbose);
         else
-            M_meshBuilder = std::make_unique<BuiltInBuilder>(M_params.domain);
+            M_meshBuilder = std::make_unique<BuiltInBuilder>(M_params.domain, M_params.verbose);
         
         M_meshBuilder->construct(M_mesh);
 

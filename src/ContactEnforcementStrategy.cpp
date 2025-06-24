@@ -4,8 +4,8 @@
 namespace gf {
 
     void
-    NitscheContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im) const {
-        
+    NitscheContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im, bool verbose) const
+    {
         md.add_initialized_scalar_data("gammaN", M_gammaN);
         md.add_initialized_scalar_data("theta", M_theta);  // symmetric variant
         
@@ -22,12 +22,10 @@ namespace gf {
         md.add_macro("norm_Pt", "sqrt(Pt1_u*Pt1_u + Pt2_u*Pt2_u)");
         md.add_macro("proj_Pt1_u", "Pt1_u * min(1, Sh / (norm_Pt + eps))");
         md.add_macro("proj_Pt2_u", "Pt2_u * min(1, Sh / (norm_Pt + eps))");
-
-        std::cout << "done.\n";
-        
+        if (verbose) std::cout << "done.\n";
         
         // Add linear stress brick
-        std::cout << "  Adding linear stress brick...";
+        if (verbose) std::cout << "  Adding linear stress brick...";
         getfem::add_linear_term(
             md,
             im,
@@ -38,11 +36,10 @@ namespace gf {
             "linear_stress",
             false /** check */
         );
-        std::cout << "done.\n";
-
+        if (verbose) std::cout << "done.\n";
 
         // Add KKT condition brick
-        std::cout << "  Adding KKT condition brick...";
+        if (verbose) std::cout << "  Adding KKT condition brick...";
         getfem::add_nonlinear_term(
             md,
             im,
@@ -52,11 +49,10 @@ namespace gf {
             false,
             "KKTbrick"
         );
-        std::cout << "done.\n";
-
+        if (verbose) std::cout << "done.\n";
 
         // Add Coulomb condition brick
-        std::cout << "  Adding Coulomb friction brick...";
+        if (verbose) std::cout << "  Adding Coulomb friction brick...";
         getfem::add_nonlinear_term(
             md,
             im,
@@ -66,25 +62,23 @@ namespace gf {
             false,
             "CoulombBrick"
         );
-        std::cout << "done.\n";
+        if (verbose) std::cout << "done.\n";
 
     }
 
 
-
     void
-    PenaltyContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im) const {
-        
+    PenaltyContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im, bool verbose) const
+    {   
         md.add_initialized_scalar_data("gammaP", M_gammaP);
         md.add_macro("Sh", "mu_fric * pos_part(un_jump)");
         md.add_macro("norm_ut_jump", "sqrt(ut1_jump*ut1_jump + ut2_jump*ut2_jump)");
         md.add_macro("proj_ut1_jump", "ut1_jump * min(1, Sh / (norm_ut_jump + eps))");
         md.add_macro("proj_ut2_jump", "ut2_jump* min(1, Sh / (norm_ut_jump + eps))");
-
-        std::cout << "done.\n";
+        if (verbose) std::cout << "done.\n";
         
         // Add KKT condition brick
-        std::cout << "  Adding KKT condition brick...";
+        if (verbose) std::cout << "  Adding KKT condition brick...";
         getfem::add_nonlinear_term(
             md,
             im,
@@ -94,11 +88,10 @@ namespace gf {
             false,
             "KKTbrick"
         );
-        std::cout << "done.\n";
-
+        if (verbose) std::cout << "done.\n";
 
         // Add Coulomb condition brick
-        std::cout << "  Adding Coulomb friction brick...";
+        if (verbose) std::cout << "  Adding Coulomb friction brick...";
         getfem::add_nonlinear_term(
             md,
             im,
@@ -108,21 +101,15 @@ namespace gf {
             false,
             "CoulombBrick"
         );
-        std::cout << "done.\n";
+        if (verbose) std::cout << "done.\n";
 
     }
 
-// md.add_fem_variable("lambdan", M_mfLMn);
-// md.add_fem_variable("lambdat", M_mfLMt);
 
-// md.add_multiplier("lambdan", M_mfLMn, Fault, "uL");
-// md.add_multiplier("lambdat", M_mfLMt, Fault, "uL");
-// md.add_filtered_fem_variable("lambdan", M_mfLMn, Fault);
     void
-    AugmentedLagrangianContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im) const {
-        
-        md.add_filtered_fem_variable("mult", M_mfLMt, Fault);
-
+    AugmentedLagrangianContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im, bool verbose) const
+    {    
+        md.add_filtered_fem_variable("mult", M_mfLM, Fault);
         md.add_initialized_scalar_data("gammaL", M_gammaL);
         
         // Normal gap and stress
@@ -142,12 +129,10 @@ namespace gf {
         md.add_macro("norm_Pt", "sqrt(Pt1_u*Pt1_u + Pt2_u*Pt2_u)");
         md.add_macro("proj_Pt1_u", "Pt1_u * min(1, Sh / (norm_Pt + eps))");
         md.add_macro("proj_Pt2_u", "Pt2_u * min(1, Sh / (norm_Pt + eps))");
-
-        std::cout << "done.\n";
+        if (verbose) std::cout << "done.\n";
         
-
         // Add KKT condition brick
-        std::cout << "  Adding KKT condition brick...";
+        if (verbose) std::cout << "  Adding KKT condition brick...";
         getfem::add_nonlinear_term(
             md,
             im,
@@ -157,10 +142,10 @@ namespace gf {
             false,
             "KKTbrick"
         );
-        std::cout << "done.\n";
+        if (verbose) std::cout << "done.\n";
 
         // Add Coulomb condition brick
-        std::cout << "  Adding Coulomb friction brick...";
+        if (verbose) std::cout << "  Adding Coulomb friction brick...";
         getfem::add_nonlinear_term(
             md,
             im,
@@ -170,11 +155,10 @@ namespace gf {
             false,
             "CoulombBrick"
         );
-        std::cout << "done.\n";
-        
+        if (verbose) std::cout << "done.\n"; 
         
         // Add LM term for normal gap
-        std::cout << "  Adding Lagrange multiplier term for normal gap...";
+        if (verbose) std::cout << "  Adding Lagrange multiplier term for normal gap...";
         getfem::add_nonlinear_term(
             md,
             im,
@@ -184,11 +168,10 @@ namespace gf {
             false,
             "LM_NormalGapBrick"
         );
-        std::cout << "done.\n";
-
+        if (verbose) std::cout << "done.\n";
         
         // Add LM term for tangential gap
-        std::cout << "  Adding Lagrange multiplier term for tangential gap...";
+        if (verbose) std::cout << "  Adding Lagrange multiplier term for tangential gap...";
         getfem::add_nonlinear_term(
             md,
             im,
@@ -198,8 +181,9 @@ namespace gf {
             false,
             "LM_TangentialGapBrick"
         );
-        std::cout << "done.\n";
+        if (verbose) std::cout << "done.\n";
 
+        // Add stabilization terms for Lagrange multipliers (negligible, eps = 1.e-20)
         getfem::add_nonlinear_term(
             md, im,
             "eps * lambdan * mun",
@@ -215,7 +199,8 @@ namespace gf {
             false, false,
             "LM_TangentialStab"
         );
-        std::cout << "done.\n";          
+
+        if (verbose) std::cout << "done.\n";          
     }
 
 

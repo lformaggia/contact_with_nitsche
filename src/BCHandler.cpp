@@ -20,7 +20,6 @@ namespace gf {
     void BCHandler::read(const GetPot& datafile){
 
         std::string regionsStr;
-        std::string normalDir;
         if constexpr (T == BCType::Dirichlet) // read the regionDisp list
             regionsStr = datafile("physics/regionDisp", "");
         else if constexpr (T == BCType::Neumann) 
@@ -29,7 +28,6 @@ namespace gf {
             regionsStr = datafile("physics/regionDispNormal", "");
 
         std::vector<std::size_t> regionsID = gf::toVec(regionsStr);
-        std::vector<std::size_t> regionsIDnormalDisp = gf::toVec(normalDir);
 
         M_BCStrings[T].reserve(regionsID.size()); // not really needed
 
@@ -41,7 +39,7 @@ namespace gf {
             else if constexpr (T == BCType::Neumann)
                 varname << "physics/bdLoad" << (i + 1); // bdLoad1, bdLoad2, ...
             else if constexpr (T == BCType::Mixed) {
-                varname << "physics/bdDispN" << (i + 1);
+                varname << "physics/bdDispN" << (i + 1); // bdDispN1, bdDispN2, ...
             }
 
             std::string stringValue = datafile(varname.str().c_str(), "");
@@ -49,18 +47,15 @@ namespace gf {
             if (stringValue.empty())
                 throw std::runtime_error("String Values undetected!");
             
-            // Use muparser
+            // Use muparserx
             M_parser.set_expression(stringValue);
             M_BCStrings[T].emplace_back(stringValue);
 
 
             getfem::mr_visitor it(M_mesh.region(regionsID[i]));
             base_small_vector n = M_mesh.mean_normal_of_face_of_convex(it.cv(), it.f());
-
-            // std::cout << "Normal of region " << regionsID[i] << ": ["
-            //     << n[0] << ", " << n[1] << ", " << n[2] << "]" << std::endl;
                 
-            if constexpr (T == BCType::Dirichlet) { // build BCDir and add to M_BCList
+            if constexpr (T == BCType::Dirichlet) {
                 // Build the BCDir object bc
                 auto bc = std::make_unique<BCDir>(M_mesh.region(regionsID[i]), regionsID[i], M_parser, T, n);
                 // Add to map

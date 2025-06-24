@@ -141,3 +141,20 @@ add_custom_target(clean-all
         -P ${CMAKE_CURRENT_SOURCE_DIR}/clean_all.cmake
     COMMENT "Performing deep clean: build/, lib/, example outputs..."
 )
+
+# ----------------------------------------
+# Step 7: Doxygen documentation generation
+# ----------------------------------------
+find_package(Doxygen REQUIRED)
+
+# set(DOXYGEN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/doc")
+set(DOXYGEN_CONFIG_FILE "${CMAKE_BINARY_DIR}/Doxyfile")
+
+configure_file(${CMAKE_SOURCE_DIR}/Doxyfile ${DOXYGEN_CONFIG_FILE} @ONLY)
+
+add_custom_target(doc
+    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_CONFIG_FILE}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM
+)

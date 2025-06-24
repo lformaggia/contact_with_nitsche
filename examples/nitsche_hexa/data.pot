@@ -28,7 +28,7 @@ bdLoad2 = {-3,0,0}
 
 [it]
 maxit = 50                      % Maximum number of iteration
-atol = 1.0e-12                  % Residual tolerance
+tol = 1.0e-12                  % Residual tolerance
 [../]
 
 [contact]

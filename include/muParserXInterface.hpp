@@ -6,23 +6,21 @@
 #include <array>
 #include <iostream>
 #include <string>
+
 namespace gf
 {
-  /*! An interface to MuParserX to define a function
-
-    It define a functor representing a function \f$ R^N \f$ to \f$ R^N\f$
-    The input variables are defined as x[0] x[1] etc and one can use the muparserX
-    syntax to create the expression.
-
-    I assume that at compile time we know the size of the argument of the function
-    and I keep the return value as template parameter. By default both input and
-    output are arrays.
-    The input variables are indicated by x[]. An example of a valid expression:
-    sin(x[0])+x[1]*x[2]
-
-    @tparam N The number of arguments of the function we want to represent
-    @tparam ArgumentType any type that support the addressing ([]) operator
-  */
+   /**
+    * @author Luca Formaggia
+    * An interface to MuParserX to define a function
+    * 
+    * It define a functor representing a function \f$ R^N x R \f$ to \f$ R^M\f$
+    * The input variables are defined as x[0], x[1], x[2] for the space variable and 
+    * t for the time variable and one can use the muparserX syntax to create the expression.
+    * The input variables are indicated by x[].
+    * Examples of valid expressions are:
+    *   {sin(x[0])+x[1]*x[2],sqrt(t),x[0]*t^2}      // Example of a vector-valued function
+    *   tanh(x[0]*x[1])+exp(x[2])*t             // Example of a scalar-valued function
+    */
 
     class muParserXInterface
     {
@@ -45,7 +43,9 @@ namespace gf
         }
         
         /**
-         * @brief Constructor that takes a string containing muParserX expression
+         * @brief Constructor
+         * @param dim the space dimension, which is the number of input variables
+         * @param expression takes a string containing muParserX expression
          */
         muParserXInterface(int dim, const std::string expression)
         : N(dim),
@@ -65,7 +65,7 @@ namespace gf
         /**
          * @brief The copy constructor
          * MuparserX has a particular design, which obliges to define a special copy
-         * constructor The reson is that a muparser engine stores the address of the
+         * constructor. The reson is that a muparser engine stores the address of the
          * variables. So a normal copy would do a shallow copy, which is NOT what you
          * want. Moreover, because of a poor design, you may loose the expression.
          * That's why I keep a copy in the class as a string and a redefine in in the
@@ -83,12 +83,12 @@ namespace gf
             M_parser.DefineVar("t", mup::Variable(&M_time));
             M_parser.SetExpr(My_e.c_str());
         }
+
         /**
          * @brief The copy assignment operator
          * MuparserX has a particular design, which obliges to define a special copy
          * assignement
          * @param mpi the muParserXInterface to be copied
-         * The copy constructor
          */
         muParserXInterface
         operator=(muParserXInterface const &mpi)
@@ -109,8 +109,7 @@ namespace gf
  
         /**
          * @brief Sets the muparserX expression.
-         * Beware, the input variables are indicated by x[].
-         * example of a valid expression: sin(x[0])+x[1]*x[2]
+         * Beware, the input variables are indicated by x[] and t
          * @par e The expression
          */
         void
@@ -121,6 +120,12 @@ namespace gf
             M = detect_codimension();
         }
 
+        /**
+         * @brief The operator() that evaluates the muparserX expression (const version)
+         * @param x the input vector, which is a bgeot::base_node
+         * @param t the time variable
+         * @return a base_small_vector containing the result of the evaluation
+         */
         base_small_vector
         operator()(base_node x, scalar_type t) const
         {
@@ -153,8 +158,15 @@ namespace gf
         std::string My_e; ///< a copy of the muparserX expression, used for the copy operations
         mup::ParserX M_parser; ///< The muparseX engine
         mutable mup::Value M_value; ///< The muparserX value used to set the variables in the engine
-        mutable mup::Value M_time; ///< The time variable
+        mutable mup::Value M_time; ///< The muparserX time variable
 
+        /**
+         * @brief Detect the codimension of the function
+         * This function evaluates the expression and returns the number of columns
+         * in the result. If the result is a scalar, it returns 1.
+         * It is used in the constructor to set the codimension of the function.
+         * @return The codimension of the function
+         */
         int detect_codimension() const {
             for (int i = 0; i < N; ++i)
                 M_value.At(i) = 0.0;

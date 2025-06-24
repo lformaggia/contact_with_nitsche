@@ -17,9 +17,10 @@ namespace gf{
     ContactProblem::init()
     {
 
+        std::cout << "Initializing the contact problem...";
         M_BC.readBC(M_params.datafile);
 
-        M_FEM.setMeshFem(M_params.numerics, M_mesh.get());
+        M_FEM.setMeshFem(M_params.numerics);
 
         getfem::pintegration_method ppi = getfem::int_method_descriptor(M_params.numerics.integration);
         size_type N = M_params.domain.dim;
@@ -34,45 +35,40 @@ namespace gf{
                 M_params.contact.gammaP);
         else if (M_params.contact.method == "augLM")
             M_contactEnforcement = std::make_unique<AugmentedLagrangianContactEnforcement>(
-                M_params.contact.gammaL, M_FEM.mf_LMn(), M_FEM.mf_LMt());
+                M_params.contact.gammaL, M_FEM.mf_LM());
         else
             throw std::runtime_error("Unknown contact enforcement method: " + M_params.contact.method);
     
-        }
+        std::cout << "done." << std::endl;
+        
+    }
 
 
     void
     ContactProblem::assemble()
     {
-        std::cout << "Preparing the assembly phase:\n";
-        
-        gmm::set_traces_level(1);
+        gmm::set_traces_level(M_params.verbose ? 1 : 0);
+
+        std::cout << "Preparing the assembly phase..." << std::endl;
         
         dim_type dim = M_mesh.get().dim();
         size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
 
         // Main unknown of the problem (displacement)
-        std::cout << "  Defining variables...";
-        
+        if (M_params.verbose) std::cout << "  Defining variables...";
         M_model.add_fem_variable("uL", M_FEM.mf_u());
         M_model.add_fem_variable("uR", M_FEM.mf_u());
-        
-        std::cout << "done.\n";
-
+        if (M_params.verbose) std::cout << "done.\n";
 
         // Add scalar data to the model
-        std::cout << "  Initializing scalar data...";
-        
+        if (M_params.verbose) std::cout << "  Initializing scalar data...";
         M_model.add_initialized_scalar_data("lambda", M_params.physics.M_lambda);
         M_model.add_initialized_scalar_data("mu", M_params.physics.M_mu);
         M_model.add_initialized_scalar_data("mu_fric", M_params.physics.M_mu_friction);
-        
-        std::cout << "done.\n";
-
+        if (M_params.verbose) std::cout << "done.\n";
 
         // Define some useful macro for Nitsche contact integrals
-        std::cout << "  Defining macros...";
-
+        if (M_params.verbose) std::cout << "  Defining macros...";
         M_model.add_initialized_scalar_data("eps", 1.e-20);
         M_model.add_macro("n", "Normal"); // use normal on contact face
         M_model.add_macro("eps_dir", "1e-4"); // to avoid numerical degeneracies
@@ -94,13 +90,11 @@ namespace gf{
         M_model.add_macro("vn_jump", "v_jump . n"); // normal test jump
         M_model.add_macro("vt1_jump", "v_jump . t1");
         M_model.add_macro("vt2_jump", "v_jump . t2");
-
         
         M_model.add_macro("stressL","(lambda*Trace(Grad_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_uL))");
         M_model.add_macro("stressR","(lambda*Trace(Grad_uR)*Id(qdim(uR)) + 2*mu*Sym(Grad_uR))");
         M_model.add_macro("stressL_voigt", "[stressL(1,1), stressL(2,2), stressL(3,3), 2*stressL(2,3), 2*stressL(1,3), 2*stressL(1,2)]");
         M_model.add_macro("stressR_voigt", "[stressR(1,1), stressR(2,2), stressR(3,3), 2*stressR(2,3), 2*stressR(1,3), 2*stressR(1,2)]");
-
         
         M_model.add_macro("traction_u", "((lambda*Trace(Grad_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_uL)) * n)");
         M_model.add_macro("traction_v", "((lambda*Trace(Grad_Test_uL)*Id(qdim(uL)) + 2*mu*Sym(Grad_Test_uL)) * n)");
@@ -111,20 +105,18 @@ namespace gf{
         M_model.add_macro("sig_v_t1", "traction_v . t1");
         M_model.add_macro("sig_v_t2", "traction_v . t2");
 
-
         // Enforcement of contact conditions
-        M_contactEnforcement->enforce(M_model, M_integrationMethod);
-
+        M_contactEnforcement->enforce(M_model, M_integrationMethod, M_params.verbose);
 
         // Add isotropic elasticity bricks
-        std::cout << "  Adding elasticity bricks...";
+        if (M_params.verbose) std::cout << "  Adding elasticity bricks...";
         getfem::add_isotropic_linearized_elasticity_brick(
             M_model, M_integrationMethod, "uL", "lambda", "mu", RegionType::BulkLeft);
         getfem::add_isotropic_linearized_elasticity_brick(
             M_model, M_integrationMethod, "uR", "lambda", "mu", RegionType::BulkRight);
-        std::cout << "done.\n";
+        if (M_params.verbose) std::cout << "done.\n";
 
-
+        // Stabilizers for displacement variables (negligible, eps = 1.e-20)
         getfem::add_nonlinear_term(
             M_model,
             M_integrationMethod,
@@ -144,10 +136,8 @@ namespace gf{
             "stabilizer2"
         );
 
-        
         // Volumic source term (gravity)
-        std::cout << "  Adding volumic source term brick...";
-
+        if (M_params.verbose) std::cout << "  Adding volumic source term brick...";
         plain_vector G(M_FEM.mf_rhs().nb_dof()*dim);
 
         for (size_type i = 0; i < nb_dof_rhs; ++i)
@@ -155,14 +145,11 @@ namespace gf{
 
         M_model.add_initialized_fem_data("VolumicData", M_FEM.mf_rhs(), G);
         getfem::add_source_term_brick(M_model, M_integrationMethod, "uL", "VolumicData", BulkLeft);
-        getfem::add_source_term_brick(M_model, M_integrationMethod, "uR", "VolumicData", BulkRight);
-        
-        std::cout << "done.\n";
-
+        getfem::add_source_term_brick(M_model, M_integrationMethod, "uR", "VolumicData", BulkRight); 
+        if (M_params.verbose) std::cout << "done.\n";
 
         // Neumann conditions
-        std::cout << "  Adding Neumann condition bricks...";
-        
+        if (M_params.verbose) std::cout << "  Adding Neumann condition bricks...";
         const auto & NeumannBCs = M_BC.Neumann();
         plain_vector F(nb_dof_rhs*dim);
         for (const auto& bc: NeumannBCs){
@@ -178,10 +165,10 @@ namespace gf{
             else
                 getfem::add_source_term_brick(M_model, M_integrationMethod,"uR",bc->name(),bc->ID());
         }
-        std::cout << "done.\n";
+        if (M_params.verbose) std::cout << "done.\n";
 
         // Dirichlet conditions
-        std::cout << "  Adding Dirichlet condition bricks...";
+        if (M_params.verbose) std::cout << "  Adding Dirichlet condition bricks...";
         const auto & DirichletBCs = M_BC.Dirichlet();
         plain_vector D(nb_dof_rhs*dim);
 
@@ -204,13 +191,10 @@ namespace gf{
                     (M_model, M_integrationMethod, "uR", M_FEM.mf_u(), bc->ID(), 
                      bc->name());
         }
-
-        std::cout << "done.\n";
-
+        if (M_params.verbose) std::cout << "done.\n";
 
         // Mixed conditions (normal Dirichlet)
-        std::cout << "  Adding normal Dirichlet condition bricks...";
-
+        if (M_params.verbose) std::cout << "  Adding normal Dirichlet condition bricks...";
         const auto & MixedBCs = M_BC.Mixed();
         plain_vector M(nb_dof_rhs);
 
@@ -234,18 +218,16 @@ namespace gf{
                 getfem::add_normal_Dirichlet_condition_with_multipliers
                     (M_model, M_integrationMethod, "uR", M_FEM.mf_rhs(), bc->ID(), bc->name());  
         }
-
-        std::cout << "done.\n";
+        if (M_params.verbose) std::cout << "done.\n";
 
     }
 
     void
-    ContactProblem::solve() {
-        gmm::set_traces_level(2);
-        std::cout << "Solving the problem..." << std::endl;
+    ContactProblem::solve()
+    {    
+        if (M_params.verbose) std::cout << "Solving the problem..." << std::endl;
 
         const auto & NeumannBCs = M_BC.Neumann();
-        gmm::set_traces_level(1);
         
         dim_type dim = M_mesh.get().dim();
         size_type nb_dof_rhs = M_FEM.mf_rhs().nb_dof();
@@ -260,7 +242,7 @@ namespace gf{
 
         for (size_type i{}; i < n_timesteps; ++i)
         {
-            std::cout << "\nt = " << t << std::endl;
+            std::cout << "t = " << t << std::endl;
             // Neumann conditions
             for (const auto& bc: NeumannBCs){
                 const auto& rg = bc->getRegion();
@@ -272,14 +254,18 @@ namespace gf{
             }
 
             // Solve the problem
-            gmm::iteration iter(M_params.it.atol, 1, M_params.it.maxIt);
+            int noise_level = 0;
+            if (M_params.verbose) noise_level = 1;
+            gmm::iteration iter(M_params.it.tol, noise_level, M_params.it.maxIt);
 
             getfem::standard_solve(M_model,iter);
 
-            if (iter.converged()) {
-                std::cout << "  Iteration converged after " << iter.get_iteration() << " iterations." << std::endl;
-            } else {
-                std::cerr << " Warning: Iteration did not converge after " << iter.get_iteration() << " iterations." << std::endl;
+            if (M_params.verbose) {
+                if (iter.converged()) {
+                    std::cout << "  Iteration converged after " << iter.get_iteration() << " iterations." << std::endl;
+                } else {
+                    std::cerr << " Warning: Iteration did not converge after " << iter.get_iteration() << " iterations." << std::endl;
+                }
             }
 
             // Export results
@@ -319,7 +305,7 @@ namespace gf{
         M_FEM.mf_stress().set_qdim(3,3); // Voigt: [Sxx, Syy, Szz, Syz, Sxz, Sxy]
         
         // Post-process stress
-        std::cout << "Computing stress...";
+        if (M_params.verbose) std::cout << "Computing stress...";
 
         plain_vector VL(M_FEM.mf_stress().nb_dof());
         plain_vector VR(M_FEM.mf_stress().nb_dof());
@@ -340,10 +326,10 @@ namespace gf{
         for (dal::bv_visitor j(dofs_sR_filtered); !j.finished(); ++j)
             VL[j] = 0.0;
 
-        std::cout << "done." << std::endl;
+        if (M_params.verbose) std::cout << "done." << std::endl;
 
         // Custom export to VTK
-        std::cout << "Exporting results to result_" << i << ".vtk...";
+        if (M_params.verbose) std::cout << "Exporting results to result_" << i << ".vtk...";
 
         scalar_type offset = 1e-5; // offset for visualization
 
@@ -559,7 +545,7 @@ namespace gf{
         for (const auto &v : stress_voigt)
             out << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " " << v[4] << " " << v[5] << "\n";
 
-        std::cout << "done." << std::endl;
+        if (M_params.verbose) std::cout << "done." << std::endl;
 
         M_model.set_real_variable("uL") = uL_backup;
         M_model.set_real_variable("uR") = uR_backup;
@@ -567,37 +553,3 @@ namespace gf{
     }
 
 } // namespace gf
-
-
-
-
-        // INTERNAL EXPORT
-
-        // getfem::vtk_export exp("result_" + std::to_string(i) + ".vtk");
-        // exp.exporting(M_FEM.mf_u());
-        // exp.write_mesh();
-        // exp.write_point_data(M_FEM.mf_u(), M_model.real_variable("uL"), "uL");
-        // exp.write_point_data(M_FEM.mf_u(), M_model.real_variable("uR"), "uR");
-
-        // gmm::clean(VL, 1E-20);
-        // exp.exporting(M_FEM.mf_stress());
-        // exp.write_point_data(M_FEM.mf_stress(), VL, "stressL");
-
-        // gmm::clean(VR, 1E-20);
-        // exp.exporting(M_FEM.mf_stress());
-        // exp.write_point_data(M_FEM.mf_stress(), VR, "stressR");
-
-        // UNCOMMENT THIS!!!
-        // M_model.set_real_variable("uL") = uL_backup;
-        // M_model.set_real_variable("uR") = uR_backup;
-
-            // Alternatively, export in Voigt notation
-                // size_type voigt_dim = (dim == 2) ? 3 : 6;
-                // M_FEM.mf_stress().set_qdim(voigt_dim);
-
-                // plain_vector VL(M_FEM.mf_stress().nb_dof());
-                // plain_vector VR(M_FEM.mf_stress().nb_dof());
-
-                // getfem::ga_interpolation_Lagrange_fem(M_model, "stressL_voigt", M_FEM.mf_stress(), VL);
-                // getfem::ga_interpolation_Lagrange_fem(M_model, "stressR_voigt", M_FEM.mf_stress(), VR);
-   

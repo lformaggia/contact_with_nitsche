@@ -19,8 +19,6 @@ namespace gf {
             throw std::runtime_error("Could not open the datafile!");
         check.close();
         
-        // GetPot datafile {filename.c_str()};
-        
         domain.dim = datafile("domain/dim", 3);
         domain.Lx = datafile("domain/Lx", 1.0);
         domain.Ly = datafile("domain/Ly", 1.0);
@@ -38,6 +36,7 @@ namespace gf {
         physics.M_lambda = (physics.M_E0 * physics.M_nu) /
                             ((1 + physics.M_nu) * (1 - 2 * physics.M_nu));
         physics.M_mu = physics.M_E0 / (2 * (1 + physics.M_nu));
+
         // Load gravity vector
         std::string gravity_str = datafile("physics/bulkLoad", "[0., 0., 0.]"); // Note: expecting [ ... ]
         std::vector<std::string> gVecStr = splitString(gravity_str);
@@ -48,8 +47,7 @@ namespace gf {
             throw std::runtime_error("Expected 3 components in physics/bulkLoad");
 
         it.maxIt = datafile("it/maxit", 30);
-        it.rtol = datafile("it/tol", 1e-6);
-        it.atol = datafile("it/atol", 0.); // atol: not in file, default to 0
+        it.tol = datafile("it/tol", 1e-6);
         
         contact.method = datafile("contact/method", "nitsche");
         contact.theta = datafile("contact/theta", 0.0);
@@ -70,8 +68,7 @@ namespace gf {
             numerics.FEMTypeDisplacement = "FEM_PK(3,"+order_u+")";
             numerics.FEMTypeRhs = "FEM_PK(3,"+order_u+")";
             numerics.FEMTypeStress = "FEM_PK(3,"+order_u+")";
-            /** \todo Select LBB compliant space for the multiplier or throw an error*/
-            numerics.FEMTypeLM = "FEM_PK(3,"+order_lm+")";//"FEM_PK_DISCONTINUOUS(3,0)";
+            numerics.FEMTypeLM = "FEM_PK(3,"+order_lm+")"; //"FEM_PK_DISCONTINUOUS(3,0)";
         }
         else if (domain.meshType == "GT_QK(3,1)")
         {
@@ -79,9 +76,7 @@ namespace gf {
             numerics.FEMTypeDisplacement = "FEM_QK(3,"+order_u+")";
             numerics.FEMTypeRhs = "FEM_QK(3,"+order_u+")";
             numerics.FEMTypeStress = "FEM_QK(3,"+order_u+")";
-            /** \todo Select LBB compliant space for the multiplier or throw an error*/
             numerics.FEMTypeLM = "FEM_QK(3,"+order_lm+")";//"FEM_QK_DISCONTINUOUS(3,0)";
-            // std::cout << "Inside Params constructor: numerics.FEMTypeRhs = " << numerics.FEMTypeRhs << std::endl;
         }
         else
             throw std::runtime_error("Select either GT_PK(3,1) or GT_QK(3,1)");
@@ -110,8 +105,7 @@ namespace gf {
         os << "-- mu_friction = " << p.physics.M_mu_friction << "\n";
         os << "IT:\n";
         os << "--maxit = " << p.it.maxIt << "\n";
-        os << "--rtol = " << p.it.rtol << "\n";
-        os << "--atol = " << p.it.atol << "\n";
+        os << "--tol = " << p.it.tol << "\n";
         os << "CONTACT: using "<< p.contact.method << " method\n";
         if (p.contact.method == "penalty") {
             os << "--gammaP = " << p.contact.gammaP << "\n";
@@ -137,7 +131,7 @@ namespace gf {
             os << "--FEMTypeLM = " << p.numerics.FEMTypeLM << "\n";
         os << "\nVERBOSE: " << (p.verbose ? "true" : "false") << "\n";
         os << "GMSH: " << (p.gmsh ? "true" : "false") << "\n";
-        os << "============================================\n";
+        os << "============================================\n\n";
             
         return os;
     };
