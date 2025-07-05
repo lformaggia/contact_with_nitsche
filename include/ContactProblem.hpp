@@ -55,12 +55,15 @@ namespace gf{
         getfem::mesh_im M_integrationMethod; ///< Integration methods
         getfem::model M_model;
 
+        void computeError(size_type);
         /**
          * @brief Export vtk results for visualization
          */
         void exportVtk(size_type i);
 
+        void exportCSV(const plain_vector& U, size_type t, const std::string& filename);
 
+        void importCSV(plain_vector& U, size_type t, const std::string& filename);
 
     };
 

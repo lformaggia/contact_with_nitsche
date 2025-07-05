@@ -110,6 +110,11 @@ namespace gf {
     AugmentedLagrangianContactEnforcement::enforce(getfem::model& md, const getfem::mesh_im& im, bool verbose) const
     {    
         md.add_filtered_fem_variable("mult", M_mfLM, Fault);
+
+        // Initialize the Lagrange multiplier variable with a small value to avoid singularity issues
+        plain_vector mult0 (M_mfLM.dof_on_region(Fault).card(), 1.e-3);
+        md.set_real_variable("mult") = mult0;
+
         md.add_initialized_scalar_data("gammaL", M_gammaL);
         
         // Normal gap and stress

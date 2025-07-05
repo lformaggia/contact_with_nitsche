@@ -11,6 +11,7 @@ namespace gf
 {
    /**
     * @author Luca Formaggia
+    * @author Stefano Galati
     * An interface to MuParserX to define a function
     * 
     * It define a functor representing a function \f$ R^N x R \f$ to \f$ R^M\f$
@@ -38,8 +39,13 @@ namespace gf
         M_value{N, 0.0},
         M_time{}
         {
-            M_parser.DefineVar("x", mup::Variable(&M_value));
+            M_parser.DefineVar("X", mup::Variable(&M_value));
             M_parser.DefineVar("t", mup::Variable(&M_time));
+
+            if (N >= 1) M_parser.DefineVar("x", mup::Variable(&M_value.At(0)));
+            if (N >= 2) M_parser.DefineVar("y",  mup::Variable(&M_value.At(1)));
+            if (N >= 3) M_parser.DefineVar("z",  mup::Variable(&M_value.At(2)));
+
         }
         
         /**
@@ -54,8 +60,12 @@ namespace gf
         M_value{N, 0.0},
         M_time{}
         {
-            M_parser.DefineVar("x", mup::Variable(&M_value));
+            M_parser.DefineVar("X", mup::Variable(&M_value));
             M_parser.DefineVar("t", mup::Variable(&M_time));
+
+            if (N >= 1) M_parser.DefineVar("x", mup::Variable(&M_value.At(0)));
+            if (N >= 2) M_parser.DefineVar("y",  mup::Variable(&M_value.At(1)));
+            if (N >= 3) M_parser.DefineVar("z",  mup::Variable(&M_value.At(2)));
 
             M_parser.SetExpr(My_e.c_str());
 
@@ -79,8 +89,13 @@ namespace gf
             M_time(0.0),
             M(mpi.M)
         {
-            M_parser.DefineVar("x", mup::Variable(&M_value));
+            M_parser.DefineVar("X", mup::Variable(&M_value));
             M_parser.DefineVar("t", mup::Variable(&M_time));
+            
+            if (N >= 1) M_parser.DefineVar("x", mup::Variable(&M_value.At(0)));
+            if (N >= 2) M_parser.DefineVar("y",  mup::Variable(&M_value.At(1)));
+            if (N >= 3) M_parser.DefineVar("z",  mup::Variable(&M_value.At(2)));
+
             M_parser.SetExpr(My_e.c_str());
         }
 
@@ -100,8 +115,13 @@ namespace gf
                 this->M_value = mpi.M_value;
                 this->M_time = mpi.M_time;
                 this->M = mpi.M;
-                M_parser.DefineVar("x", mup::Variable(&M_value));
+                M_parser.DefineVar("X", mup::Variable(&M_value));
                 M_parser.DefineVar("t", mup::Variable(&M_time));
+
+                if (N >= 1) M_parser.DefineVar("x", mup::Variable(&M_value.At(0)));
+                if (N >= 2) M_parser.DefineVar("y",  mup::Variable(&M_value.At(1)));
+                if (N >= 3) M_parser.DefineVar("z",  mup::Variable(&M_value.At(2)));
+
                 M_parser.SetExpr(My_e.c_str());
             }
             return *this;
@@ -118,6 +138,17 @@ namespace gf
             My_e = e;
             M_parser.SetExpr(e.c_str());
             M = detect_codimension();
+        }
+
+        /**
+         * @brief Adds a variable to the muparserX engine
+         * @param name the name of the variable
+         * @param value the value of the variable
+         */
+        void
+        add_constant(const std::string &name, double value)
+        {
+            M_parser.DefineConst(name, mup::Value(value));
         }
 
         /**
@@ -192,3 +223,4 @@ namespace gf
 
 
 #endif // _MUPARSERX_INTERFACE_HPP_
+

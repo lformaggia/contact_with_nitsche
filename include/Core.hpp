@@ -47,7 +47,7 @@ namespace gf {
     using VectorFunctionType = std::function<base_small_vector(base_node, scalar_type)>; ///< \vector{f}(\vector{x},t)
     
     using plain_vector = getfem::modeling_standard_plain_vector; /// a vector of scalar_type, used for Getfem++ models
-
+    using row_matrix = gmm::row_matrix<plain_vector>; 
 
     /**
      * @brief Enumeration for boundary condition types.

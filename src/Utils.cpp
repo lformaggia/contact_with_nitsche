@@ -29,6 +29,17 @@ namespace gf {
         return result;
     }
 
+    void print_help() {
+        std::cout << "Usage: ./main [OPTIONS]\n";
+        std::cout << "Available options:\n";
+        std::cout << "  -h            Print this help message\n";
+        std::cout << "  -v            Be verbose on output\n";
+        std::cout << "  -m            Generate mesh using Gmsh\n";
+        std::cout << "  -i            Import initial solution for initialization (initSolutionLeft.txt, initSolutionRight.txt)\n";
+        std::cout << "  -ir           Export initial solution for initialization (initSolutionLeft.txt, initSolutionRight.txt)\n";
+        std::cout << "  -r            Export reference solution (refSolutionLeft.txt, refSolutionRight.txt)\n";
+        std::cout << "  -t            Import and compute error against reference solution (refSolutionLeft.txt, refSolutionRight.txt)\n";
+    }
 
 } // namespace gf
 

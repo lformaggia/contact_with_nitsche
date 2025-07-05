@@ -13,6 +13,10 @@ namespace gf {
         
         verbose = command_line.search("-v");
         gmsh = command_line.search("-m");
+        refined = command_line.search("-r");
+        test = command_line.search("-t");
+        init = command_line.search("-i");
+        initRef = command_line.search("-ir");
         
         std::ifstream check(dataFileName);
         if(!check.is_open())
@@ -25,9 +29,10 @@ namespace gf {
         domain.Lz = datafile("domain/Lz", 1.0);
         domain.h = datafile("domain/h", 0.2);
         domain.angle = datafile("domain/angle", 0.);
+        int ratio = static_cast<int>(domain.Ly/domain.Lx);
         domain.Nx = static_cast<int>(domain.Lx/domain.h);
-        domain.Ny = static_cast<int>(domain.Ly/domain.h);
-        domain.Nz = static_cast<int>(domain.Lz/domain.h);
+        domain.Ny = static_cast<int>(domain.Ly/domain.h/ratio);
+        domain.Nz = static_cast<int>(domain.Lz/domain.h/ratio);
         domain.meshType = datafile("domain/meshType", "GT_PK(3,1)");
         
         physics.M_E0 = datafile("physics/E", 0.0);
@@ -52,7 +57,7 @@ namespace gf {
         contact.method = datafile("contact/method", "nitsche");
         contact.theta = datafile("contact/theta", 0.0);
         contact.gammaN = datafile("contact/gammaN", 10.0)*physics.M_E0/domain.h; // gammaN = 10*E/h
-        contact.gammaP = datafile("contact/gammaP", 1.e5);
+        contact.gammaP = datafile("contact/gammaP", 10.0)*physics.M_E0/domain.h; // gammaP = 10*E/h
         contact.gammaL = datafile("contact/gammaL", 10.0)*physics.M_E0/domain.h; // gammaL = 10*E/h
 
         std::string order_u = datafile("domain/order_u", "1");

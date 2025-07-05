@@ -23,6 +23,12 @@ namespace gf {
      */
     std::vector<size_type> toVec(std::string stringValue);
 
+    /**
+     * @brief Print optional runtime options when running
+     *      ./main -h
+     */
+    void print_help();
+
 } // namespace gf
 
 #endif // _UTILS_HPP_

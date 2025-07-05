@@ -106,6 +106,10 @@ namespace gf {
         Numerics numerics;
         bool verbose = false;
         bool gmsh = false;
+        bool refined = false;
+        bool test = false;
+        bool init = false;
+        bool initRef = false;
         
         Params(int argc, char* argv[]);
         

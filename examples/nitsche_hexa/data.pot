@@ -1,12 +1,12 @@
 [domain]
 angle = 2                       % Inclination degree (ignored if the mesh is built-in)
 Lx = 1                          % Lenght of domain side along x
-Ly = 1                          % Lenght of domain side along y
-Lz = 1                          % Lenght of domain side along z
+Ly = 2                          % Lenght of domain side along y
+Lz = 2                          % Lenght of domain side along z
 h = 0.5                         % Grid spacing
 meshType = GT_QK(3,1)           % Element type: GT_QK(3,1) for hexahedron, GT_PK(3,1) for tetrahedron
 order_u = 1                     % Order of Lagrangian Finite Elements for displacement
-order_lm = 0                    % Order of Lagrangian Finite Elements for LM (used iff method==augLM)
+order_lm = 1                    % Order of Lagrangian Finite Elements for LM (used iff method==augLM)
 [../]
 
 [physics]
@@ -17,6 +17,7 @@ mu_friction = 0.4               % Friction coefficient
 
 regionDisp = [1,5]              % Dirichlet bd regions
 bdDisp1 = {0.,0.,0.}
+bdDisp2 = {0.,0.,0.}
 
 regionDispNormal = [9]          % Normal Dirichlet bd regions
 bdDispN1 = 0.
@@ -27,20 +28,20 @@ bdLoad2 = {-3,0,0}
 [../]
 
 [it]
+tol = 1.0e-5                    % Residual tolerance
 maxit = 50                      % Maximum number of iteration
-tol = 1.0e-12                  % Residual tolerance
 [../]
 
 [contact]
-method = nitsche                % nitsche penalty
-theta = 1                       % +1 0 -1 Nitsche 
+method = nitsche                % nitsche penalty augLM
+theta = 0                       % +1 0 -1 Nitsche 
 gammaN = 10                     % Nitsche parameter
-gammaP = 1.0e5                  % Penalty parameter
-gammaL = 1.0e2                  % augmented Lagrange parameter
+gammaP = 10                     % Penalty parameter
+gammaL = 10                     % augmented Lagrange parameter
 [../]
 
 [time]
-t0 = 0.0                       % Starting time
-tend = 10.5                       % Ending time
-dt = 0.5                       % Timestep
+t0 = 0.0                        % Starting time
+tend = 10.5                     % Ending time
+dt = 0.5                        % Timestep
 [../]

@@ -19,7 +19,7 @@ namespace gf{
 
         std::cout << "Initializing the contact problem...";
         M_BC.readBC(M_params.datafile);
-
+        
         M_FEM.setMeshFem(M_params.numerics);
 
         getfem::pintegration_method ppi = getfem::int_method_descriptor(M_params.numerics.integration);
@@ -224,7 +224,18 @@ namespace gf{
 
     void
     ContactProblem::solve()
-    {    
+    {   
+        plain_vector uL0 (M_FEM.mf_u().nb_basic_dof(),0);
+        plain_vector uR0 (M_FEM.mf_u().nb_basic_dof(),0);
+
+        if (M_params.init){
+            // the input files are used to better initialize the solution at the first time-step
+            importCSV(uL0, 0, "initSolutionLeft.csv");
+            importCSV(uR0, 0, "initSolutionRight.csv");
+            M_model.set_real_variable("uL") = uL0;
+            M_model.set_real_variable("uR") = uR0;
+        }
+
         if (M_params.verbose) std::cout << "Solving the problem..." << std::endl;
 
         const auto & NeumannBCs = M_BC.Neumann();
@@ -268,6 +279,26 @@ namespace gf{
                 }
             }
 
+            /* Output solution to csv file:
+                - if -r: refSolution{Left,Right}.csv will be used as reference for computing the erorr
+                - if -ir: initSolution{Left,Right}.csv will be used to initialize uL, uR
+            */
+            if (M_params.refined || M_params.initRef){
+                size_type dofU = M_FEM.mf_u().nb_basic_dof();
+                // Export the refined solution
+                std::vector<scalar_type> uL(dofU);
+                gmm::copy(M_model.real_variable("uL"), uL);
+                std::vector<scalar_type> uR(dofU);
+                gmm::copy(M_model.real_variable("uR"), uR);
+                std::string outfileL = (M_params.refined) ? "refSolutionLeft.csv" : "initSolutionLeft.csv";
+                std::string outfileR = (M_params.refined) ? "refSolutionRight.csv" : "initSolutionRight.csv";
+                exportCSV(uL, i, outfileL);
+                exportCSV(uR, i, outfileR);
+            }
+            else if (M_params.test) {
+                computeError(i);
+            }
+
             // Export results
             exportVtk(i);
 
@@ -275,6 +306,60 @@ namespace gf{
             t += M_params.time.dt;
         }
 
+    }
+
+
+    void
+    ContactProblem::computeError(size_type i) {
+        // Create a finer mesh for the "exact" solution (better do this elsewhere)
+        Params p(M_params);
+        // RMK: p.domain.h 
+        p.domain.h = 0.125;
+        int ratio = static_cast<int>(p.domain.Ly/p.domain.Lx);
+        p.domain.Nx = static_cast<int>(p.domain.Lx/p.domain.h);
+        p.domain.Ny = static_cast<int>(p.domain.Ly/p.domain.h/ratio);
+        p.domain.Nz = static_cast<int>(p.domain.Lz/p.domain.h/ratio);
+        Mesh m(p);
+        getfem::mesh_fem mfUrefined(m.get(),3);
+        mfUrefined.set_finite_element(getfem::fem_descriptor(M_params.numerics.FEMTypeDisplacement));
+        size_type dofUrefined = mfUrefined.nb_basic_dof();
+        size_type dofU = M_FEM.mf_u().nb_basic_dof();
+        std::vector<scalar_type> uL_refined(dofUrefined);
+        std::vector<scalar_type> uR_refined(dofUrefined);
+
+        importCSV(uL_refined, i, "refSolutionLeft.csv");
+        importCSV(uR_refined, i, "refSolutionRight.csv");
+
+        std::vector<scalar_type> uL(dofU);
+        gmm::copy(M_model.real_variable("uL"), uL);
+        std::vector<scalar_type> uR(dofU);
+        gmm::copy(M_model.real_variable("uR"), uR);
+
+        // Compute error w.r.t the refined solution
+        scalar_type errL2 {};
+        scalar_type errH1 {};
+
+        plain_vector uL_refined_interp(dofU,0.);
+        plain_vector uR_refined_interp(dofU,0.);
+
+        getfem::interpolation(mfUrefined, M_FEM.mf_u(), uL_refined, uL_refined_interp);
+        getfem::interpolation(mfUrefined, M_FEM.mf_u(), uR_refined, uL_refined_interp);
+        errL2 += getfem::asm_L2_dist(M_integrationMethod, M_FEM.mf_u(), uL, M_FEM.mf_u(), uL_refined_interp, M_mesh.region(BulkLeft));
+        errH1 += getfem::asm_H1_dist(M_integrationMethod, M_FEM.mf_u(), uL, M_FEM.mf_u(), uL_refined_interp, M_mesh.region(BulkLeft));
+        errL2 += getfem::asm_L2_dist(M_integrationMethod, M_FEM.mf_u(), uR, M_FEM.mf_u(), uR_refined_interp, M_mesh.region(BulkRight));
+        errH1 += getfem::asm_H1_dist(M_integrationMethod, M_FEM.mf_u(), uR, M_FEM.mf_u(), uR_refined_interp, M_mesh.region(BulkRight));
+
+
+        
+        // getfem::interpolation(M_FEM.mf_u(), mfUrefined, uL_refined_interp, uL_refined);
+        // // getfem::interpolation(M_FEM.mf_u(), mfUrefined, uL_refined_interp, uR_refined);
+        // errL2 += getfem::asm_L2_dist(M_integrationMethod, M_FEM.mf_u(), uL_refined_interp, M_FEM.mf_u(), uL, M_mesh.region(BulkLeft));
+        // errH1 += getfem::asm_H1_dist(M_integrationMethod, M_FEM.mf_u(), uL_refined_interp, M_FEM.mf_u(), uL, M_mesh.region(BulkLeft));
+        // errL2 += getfem::asm_L2_dist(M_integrationMethod, M_FEM.mf_u(), uR_refined_interp, M_FEM.mf_u(), uR, M_mesh.region(BulkRight));
+        // errH1 += getfem::asm_H1_dist(M_integrationMethod, M_FEM.mf_u(), uR_refined_interp, M_FEM.mf_u(), uR, M_mesh.region(BulkRight));
+
+        std::cout << "  ErrL2: " << errL2 << std::endl;
+        std::cout << "  ErrH1: " << errH1 << std::endl;
     }
 
     
@@ -502,8 +587,7 @@ namespace gf{
 
         std::ofstream out(filename);
         if (!out) {
-            std::cerr << "Cannot open file " << filename << " for writing.\n";
-            return;
+            throw std::runtime_error("Cannot open " + filename + " for writing.\n");
         }
 
         out << "# vtk DataFile Version 3.0\n";
@@ -551,5 +635,83 @@ namespace gf{
         M_model.set_real_variable("uR") = uR_backup;
 
     }
+
+
+    void
+    ContactProblem::exportCSV(const plain_vector& U, size_type t, const std::string& filename)
+    {
+        std::ofstream file;
+        if (t == 0) file.open(filename); // start writing
+        else file.open(filename, std::ios::app); // open in append mode for next timesteps
+        if (!file.is_open()) {
+            throw std::runtime_error("Error: cannot open file " + filename + " for writing.\n");
+        }
+
+        const std::size_t n_nodes = U.size()/3;
+        file << "t = " << t << "\n";
+
+        size_type dof_per_node = 3;
+        for (size_type n = 0; n < n_nodes; ++n) {
+            for (size_type d = 0; d < 3; ++d) {
+                file << std::setprecision(20) << U[n * dof_per_node + d];
+                if (d < dof_per_node - 1)
+                    file << ",";
+            }
+            file << "\n";
+        }
+
+        file << "\n";
+        file.close();
+
+    }
+
+
+    void
+    ContactProblem::importCSV(plain_vector& U, size_type i, const std::string& filename)
+    {
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            throw std::runtime_error("Error opening file " + filename + "\n");
+        }
+
+        std::string line;
+        bool found_time_block = false;
+        std::ostringstream time_marker;
+        time_marker << "t = " << i;
+
+        // Search for the line "t = i"
+        while (std::getline(file, line)) {
+            if (line.find(time_marker.str()) != std::string::npos) {
+                found_time_block = true;
+                break;
+            }
+        }
+
+        if (!found_time_block) {
+            std::cerr << "Time block t = " << i << " not found in file.\n";
+            return;
+        }
+
+        U.clear(); // Clear U before filling
+
+        // Read lines until an empty line or EOF
+        while (std::getline(file, line)) {
+            if (line.empty()) break; // Stop at empty line
+
+            std::istringstream ss(line);
+            std::string value_str;
+            while (std::getline(ss, value_str, ',')) {
+                std::istringstream vs(value_str);
+                scalar_type value;
+                vs >> value;
+                if (!vs.fail()) {
+                    U.push_back(value);
+                } else {
+                    // std::cerr << "Warning: couldn't parse value '" << value_str << "'\n";
+                }
+            }
+        }
+    }
+
 
 } // namespace gf
