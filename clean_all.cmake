@@ -5,8 +5,19 @@ macro(empty_directory dir_path)
     if(EXISTS "${dir_path}")
         file(GLOB CONTENTS "${dir_path}/*")
         if(CONTENTS)
-            file(REMOVE_RECURSE ${CONTENTS})
-            message(STATUS "Emptied directory: ${dir_path}")
+            set(FILES_TO_REMOVE "")
+            foreach(item IN LISTS CONTENTS)
+                get_filename_component(filename "${item}" NAME)
+                if(NOT filename STREQUAL "report.pdf")
+                    list(APPEND FILES_TO_REMOVE "${item}")
+                endif()
+            endforeach()
+            if(FILES_TO_REMOVE)
+                file(REMOVE_RECURSE ${FILES_TO_REMOVE})
+                message(STATUS "Emptied directory (except report.pdf): ${dir_path}")
+            else()
+                message(STATUS "Directory only contains report.pdf, nothing removed: ${dir_path}")
+            endif()
         else()
             message(STATUS "Directory already empty: ${dir_path}")
         endif()
@@ -16,9 +27,10 @@ macro(empty_directory dir_path)
 endmacro()
 
 
-# Remove build and lib directories
+# Clean build lib and doc directories
 empty_directory("${PROJECT_ROOT}/build")
 empty_directory("${PROJECT_ROOT}/lib")
+empty_directory("${PROJECT_ROOT}/doc")
 
 
 # Clean each example directory
@@ -51,9 +63,5 @@ foreach(EXAMPLE ${EXAMPLES})
     endif()
 endforeach()
 
-# Clean the documentation directory if it exists
-if(EXISTS "${PROJECT_ROOT}/doc")
-    file(REMOVE_RECURSE "${PROJECT_ROOT}/doc")
-endif()
 
 message(STATUS "Running clean_all.cmake")

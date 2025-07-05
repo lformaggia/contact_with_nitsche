@@ -117,6 +117,7 @@ The user interfaces with the code just by modifying the getpot datafile in the `
 ```bash
 ./main <-v> <-m>
 ```
+with `-v` if you want verbose output and `-m` if you want to create the mesh using Gmsh (in such case you need to have it installed in your system).
 To check all the possible options, run
 ```bash
 ./main -h
