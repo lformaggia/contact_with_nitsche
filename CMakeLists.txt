@@ -11,16 +11,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# -------------------------------
 # Options
-# -------------------------------
 option(ENABLE_EXAMPLES "Enable running example tests via CTest" OFF)
 option(EXAMPLES_VERBOSE "Pass -v to examples" OFF)
 option(EXAMPLES_USE_GMSH "Pass -m to examples" OFF)
 
-# -------------------------------
-# Step 1: Build and install muparserx
-# -------------------------------
+# Build and install muparserx
 include(ExternalProject)
 
 set(MUPARSERX_INSTALL_DIR ${CMAKE_SOURCE_DIR}/lib/muparserx)
@@ -38,9 +34,7 @@ ExternalProject_Add(muparserx_ext
     BUILD_BYPRODUCTS ${MUPARSERX_INSTALL_DIR}/lib/libmuparserx.so
 )
 
-# -------------------------------
-# Step 2: Static library from src/
-# -------------------------------
+# Static library from src/
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${MUPARSERX_INSTALL_DIR}/include/muparserx
@@ -58,9 +52,8 @@ set_target_properties(mycontactlib PROPERTIES
 
 add_dependencies(mycontactlib muparserx_ext)
 
-# -------------------------------
-# Step 3: Build the main executable
-# -------------------------------
+
+# Build the main executable
 add_executable(main main.cpp)
 target_link_libraries(main PRIVATE mycontactlib)
 
@@ -73,9 +66,7 @@ target_link_libraries(main PRIVATE
 
 target_link_options(main PRIVATE -Wl,-rpath,'$ORIGIN/../lib/muparserx/lib')
 
-# -------------------------------
-# Step 4: Copy or symlink main into each example dir
-# -------------------------------
+# Copy or symlink main into each example dir
 file(GLOB EXAMPLE_DIRS RELATIVE ${CMAKE_SOURCE_DIR}/examples ${CMAKE_SOURCE_DIR}/examples/*)
 foreach(EXAMPLE ${EXAMPLE_DIRS})
     if(IS_DIRECTORY "${CMAKE_SOURCE_DIR}/examples/${EXAMPLE}")
@@ -97,9 +88,7 @@ foreach(EXAMPLE ${EXAMPLE_DIRS})
     endif()
 endforeach()
 
-# -------------------------------
-# Step 5: CTest-based example execution (optional)
-# -------------------------------
+# Ctest the examples (optional)
 include(CTest)
 enable_testing()
 
@@ -132,9 +121,7 @@ foreach(EXAMPLE ${EXAMPLE_DIRS})
     endif()
 endforeach()
 
-# -------------------------------
-# Step 6: Custom clean target
-# -------------------------------
+# Custom clean target
 add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND}
         -DPROJECT_ROOT=${PACS_PROJECT_ROOT}
@@ -142,9 +129,7 @@ add_custom_target(clean-all
     COMMENT "Performing deep clean: build/, lib/, example outputs..."
 )
 
-# ----------------------------------------
-# Step 7: Doxygen documentation generation
-# ----------------------------------------
+# Doxygen documentation generation
 find_package(Doxygen REQUIRED)
 
 # set(DOXYGEN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/doc")
