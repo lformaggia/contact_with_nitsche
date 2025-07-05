@@ -61,7 +61,7 @@ Since the code supports mesh generation via the open-source software Gmsh, you m
 
 Once you have installed the GetFEM++ library, go to the \texttt{PROJECT\_ROOT} and run:
 ```bash
-    cd build
+    mkdir build && cd build
     cmake ..
 ```
 with possible options (all defaulted to OFF):
@@ -72,6 +72,7 @@ and then:
 ```bash
     make -j<nprocs>
 ```
+Note: If the `build` directory gets automatically populated by CMake due to your IDE settings when you restart the IDE, remove the directory and create a new one with the given command
 
 Optionally, you can execute the example both to check that the installation of the library was successful and to check that the output is correct, by doing:
 ```bash
