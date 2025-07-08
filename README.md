@@ -2,12 +2,7 @@
 ## S. Galati
 ### A.A. 2024-2025
 
-The project aims to solve a contact mechanics problem using different methods for imposing both the non-penetrability and the Coulomb friction condition at the interface representing the fault. The implemented code allows to solve 3-dimensional problems where the geometry is a parallelepiped bulk which is entirely cut by a fault intersecting the top and the bottom boundary, possibly with a small inclination. The codebase is compiled with \texttt{CMake} and is used to generate a small static library \texttt{mycontactlib.a} that is used by the {main.cpp} source code.
-The FEM framework is given by GetFEM++, a very powerful library for solving many FEM problems. In order to compile and execute the code, the user will need the following libraries installed:
-- getfem
-- mumps (sequential version): for the linear algebra procedures
-
-The implemented code allows to solve 3-dimensional problems where the geometry is a parallelepiped bulk which is entirely cut by a fault intersecting the top and the bottom boundary, possibly with a small inclination. The codebase is compiled with `CMake` and is used to generate a small static library `mycontactlib.a` that is used by the `main.cpp` source code.
+The project aims to solve a contact mechanics problem using different methods for imposing both the non-penetrability and the Coulomb friction condition at the interface representing the fault. The implemented code allows to solve 3-dimensional problems where the geometry is a parallelepiped bulk which is entirely cut by a fault intersecting the top and the bottom boundary, possibly with a small inclination. The codebase is compiled with `CMake` and is used to generate a small static library `mycontactlib.a` that is used by the `main.cpp` source code.
 It supports Gmsh integration for the generation of inclined and/or unstructured meshes. The main library used is GetFEM++ with an internal binding to some common linear algebra libraries. Before compiling the code, the user needs to have those libraries installed in their system directories.
 
 # Notes for compiling the code
