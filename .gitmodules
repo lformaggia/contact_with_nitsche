@@ -1,0 +1,3 @@
+[submodule "external/getfem"]
+	path = external/getfem
+	url = https://git.savannah.nongnu.org/git/getfem.git

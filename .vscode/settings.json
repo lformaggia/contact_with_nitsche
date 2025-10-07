@@ -1,4 +1,18 @@
 {
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/lib/**": true,
+        "**/external/**": true,
+        "**/*.vtk": true,
+        "**/*.msh": true,
+        "**/*.geo": true,
+        "**/main": true
+    },
+    "search.exclude": {
+        "**/build/**": true,
+        "**/lib/**": true,
+        "**/external/**": true
+    },
     "files.associations": {
         "mutex": "cpp",
         "getpot": "cpp",
